@@ -1,16 +1,16 @@
 "use client";
-import NavBar from "./components/navBar";
+import NavBar from "./components/shared/navBar";
 import "./globals.css";
-import Attribures from "./components/attributes";
-import Features from "./components/features";
-import EditTwin from "./components/editTwin";
+import Attribures from "./components/shared/attributes";
+import Features from "./components/shared/features";
+import EditTwin from "./components/common/editTwin";
 import Globe from "./other/Globe";
 import CesiumOfflineGlobe from "./other/offlineCesiumGlobe";
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
 
-const TowerGlobe = dynamic(() => import("./components/towerGlobe"), {
+const TowerView = dynamic(() => import("./components/common/towerView"), {
   ssr: false,
 });
 
@@ -19,7 +19,7 @@ const page = () => {
 
   return (
     <div>
-      <TowerGlobe currTower={currTower} setcurrTower={setcurrTower} />
+      <TowerView currTower={currTower} setcurrTower={setcurrTower} />
 
       {/* <Globe /> */}
     </div>
