@@ -1,9 +1,9 @@
 "use client";
 
-import NavBar from "@/app/components/navBar";
-import Attribures from "@/app/components/attributes";
-import Features from "@/app/components/features";
-import EditTwin from "@/app/components/editTwin";
+import NavBar from "@/app/components/shared/navBar";
+import Attribures from "@/app/components/shared/attributes";
+import Features from "@/app/components/shared/features";
+import EditTwin from "@/app/components/common/editTwin";
 import TowerComponents from "@/app/components/towerComponents";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
@@ -42,8 +42,10 @@ const TowerDetails = () => {
         <Attribures data={twinData?.attributes} />
         <Features data={twinData?.features} />
       </div>
-      <EditTwin data={twinData} />
-      <TowerComponents features={twinData.features} />
+      <div className="">
+        <EditTwin data={twinData} />
+        {/* <TowerComponents features={twinData.features} /> */}
+      </div>
     </div>
   );
 };
