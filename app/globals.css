@@ -115,3 +115,9 @@ body {
   font-family: "Rubik", sans-serif;
   font-optical-sizing: auto;
 }
+
+@layer components {
+  .dim-background {
+    background-color: #0000007c;
+  }
+}

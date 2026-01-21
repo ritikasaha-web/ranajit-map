@@ -53,9 +53,11 @@ const FitMarkersBounds: React.FC<{ positions: [number, number][] }> = ({
 const TowerMap = ({
   currTower,
   setcurrTower,
+  setOpenExpandTower,
 }: {
   currTower: any;
   setcurrTower: React.Dispatch<React.SetStateAction<any>>;
+  setOpenExpandTower: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
   const [towers, setTowers] = useState<any[]>([]);
   const [zoom, setZoom] = useState(5); // 👈 zoom state
@@ -144,6 +146,7 @@ const TowerMap = ({
                     currTower?.attributes?.installation_type || ""
                   }
                   components={currTower?.features?.components?.properties || {}}
+                  setOpenExpandTower={setOpenExpandTower}
                 />
               </div>
             </Popup>
