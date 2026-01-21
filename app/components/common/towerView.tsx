@@ -9,13 +9,19 @@ const TowerMap = dynamic(() => import("./towerMap"), {
 const TowerView = ({
   currTower,
   setcurrTower,
+  setOpenExpandTower,
 }: {
   currTower: any;
   setcurrTower: React.Dispatch<React.SetStateAction<any>>;
+  setOpenExpandTower: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
   return (
     <div className="flex">
-      <TowerMap currTower={currTower} setcurrTower={setcurrTower} />
+      <TowerMap
+        currTower={currTower}
+        setcurrTower={setcurrTower}
+        setOpenExpandTower={setOpenExpandTower}
+      />
       <TwinOverview currTower={currTower} />
     </div>
   );

@@ -3,18 +3,23 @@ import {
   fourPoledComponentSet,
   monopoleComponentSet,
   tripoleComponentSet,
+  guyedMastComponentSet,
 } from "@/app/constants/component_names";
+
+import { BsFullscreen } from "react-icons/bs";
 
 interface TowerPreviewProps {
   structureType: string;
   installationType: string;
   components: Record<string, any>;
+  setOpenExpandTower: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const TowerPreview = ({
   components,
   structureType,
   installationType,
+  setOpenExpandTower,
 }: TowerPreviewProps) => {
   const formatValue = (value: string) => {
     return value
@@ -27,7 +32,8 @@ const TowerPreview = ({
   const componentSetMap: Record<string, Set<string>> = {
     monopole: monopoleComponentSet,
     tripole: tripoleComponentSet,
-    four_poled: fourPoledComponentSet,
+    four_pole: fourPoledComponentSet,
+    guyed_mast: guyedMastComponentSet,
   };
 
   const towerComponents =
@@ -43,7 +49,10 @@ const TowerPreview = ({
   return (
     <div className="w-full max-w-3xl items-center bg-white rounded-xl">
       {/* Layered Tower Image */}
-      <div className="relative w-[400px] h-[450px] flex-shrink-0 ">
+      <div className="absolute top-2 right-6 text-2xl cursor-pointer opacity-60 duration-150 rounded-full p-2 hover:opacity-100 z-20">
+        <BsFullscreen size={20} onClick={() => setOpenExpandTower(true)} />
+      </div>
+      <div className="relative w-[400px] h-[500px] flex-shrink-0 ">
         {layeredImages.map((src, index) => (
           <img
             key={index}

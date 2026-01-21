@@ -6,6 +6,7 @@ import Features from "./components/shared/features";
 import EditTwin from "./components/common/editTwin";
 import Globe from "./other/Globe";
 import CesiumOfflineGlobe from "./other/offlineCesiumGlobe";
+import ExpandTowerPreview from "./components/shared/expandTowerPreview";
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
@@ -16,10 +17,24 @@ const TowerView = dynamic(() => import("./components/common/towerView"), {
 
 const page = () => {
   const [currTower, setcurrTower] = useState<any>();
+  const [openExpandTower, setOpenExpandTower] = useState<boolean>(false);
 
   return (
     <div>
-      <TowerView currTower={currTower} setcurrTower={setcurrTower} />
+      {openExpandTower && (
+        <ExpandTowerPreview
+          onClose={() => {
+            console.log(currTower);
+            setOpenExpandTower(false);
+          }}
+          currTower={currTower}
+        />
+      )}
+      <TowerView
+        currTower={currTower}
+        setcurrTower={setcurrTower}
+        setOpenExpandTower={setOpenExpandTower}
+      />
 
       {/* <Globe /> */}
     </div>
