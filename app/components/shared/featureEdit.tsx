@@ -1,65 +1,123 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface FeatureEditProps {
-  data?: any; // features from Ditto
-  thingId: string; // <-- add this so we know which thing to update
+  data?: any;
+  thingId: string;
 }
 
-const FeatureEdit: React.FC<FeatureEditProps> = ({ data, thingId }) => {
-  const [json, setJson] = useState("");
-  const [editMode, setEditMode] = useState(false);
+const FeatureEdit: React.FC<FeatureEditProps> = ({ data = {}, thingId }) => {
+  const [localData, setLocalData] = useState<any>(data);
+  const [draftData, setDraftData] = useState<any>(data);
+  const [isEditing, setIsEditing] = useState(false);
 
-  // Load incoming data as formatted JSON
   useEffect(() => {
-    if (data) {
-      setJson(JSON.stringify(data, null, 2));
-    }
+    setLocalData(data);
+    setDraftData(data);
   }, [data]);
 
-  const handleEdit = () => setEditMode(true);
+  /* -----------------------------
+     Recursive Editable Renderer
+  ----------------------------- */
+  const renderEditable = (value: any, path: string[]) => {
+    // primitive
+    if (value === null || value === undefined || typeof value !== "object") {
+      return isEditing ? (
+        <input
+          type="text"
+          value={String(value ?? "")}
+          onChange={(e) => {
+            setDraftData((prev: any) => {
+              const copy = structuredClone(prev);
+              let ref = copy;
+              for (let i = 0; i < path.length - 1; i++) {
+                ref = ref[path[i]];
+              }
+              ref[path[path.length - 1]] = e.target.value;
+              return copy;
+            });
+          }}
+          className="w-full px-3 py-1.5 rounded-md border border-sky-200 focus:ring-2 focus:ring-sky-300"
+        />
+      ) : (
+        <span className="text-slate-600">
+          {String(value).replaceAll("_", " ")}
+        </span>
+      );
+    }
+
+    // object
+    return (
+      <div className="ml-3 mt-2 space-y-2 border-l border-sky-200 pl-3">
+        {Object.entries(value).map(([k, v]) => (
+          <div key={k}>
+            <div className="font-medium capitalize text-slate-700">
+              {k.replaceAll("_", " ")}
+            </div>
+            <div className="ml-2">{renderEditable(v, [...path, k])}</div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  /* -----------------------------
+     Actions
+  ----------------------------- */
+  const handleEdit = () => setIsEditing(true);
 
   const handleCancel = () => {
-    setJson(JSON.stringify(data, null, 2));
-    setEditMode(false);
+    setDraftData(localData);
+    setIsEditing(false);
   };
 
   const handleSave = async () => {
     try {
-      const parsed = JSON.parse(json);
-
       const response = await fetch(
         `http://localhost:8080/api/2/things/${thingId}/features`,
         {
           method: "PATCH",
           headers: {
             "Content-Type": "application/merge-patch+json",
-            Authorization: "Basic " + btoa("ditto:ditto"), // change if needed
+            Authorization: "Basic " + btoa("ditto:ditto"),
           },
-          body: JSON.stringify(parsed),
-        }
+          body: JSON.stringify(draftData),
+        },
       );
 
       if (!response.ok) {
         const err = await response.text();
-        alert("Ditto PATCH Failed:\n" + err);
+        toast.warning("Something went wrong, can't change features.");
         return;
       }
 
-      setEditMode(false);
-      alert("Successfully updated features!");
-    } catch (e) {
-      alert("Invalid JSON format!");
+      setLocalData(draftData);
+      setIsEditing(false);
+      toast.promise<{ name: string }>(
+        () =>
+          new Promise((resolve) =>
+            setTimeout(() => resolve({ name: "Event" }), 2000),
+          ),
+        {
+          loading: "Loading...",
+          success: (data) => "Features updated successfully",
+          error: "Error",
+        },
+      );
+    } catch {
+      toast.warning("Something went wrong, can't change features.");
     }
   };
 
   return (
-    <div className="relative w-1/2 mx-auto mt-10 p-6 bg-white rounded-2xl shadow-md border-2 border-primary">
-      <div className="absolute top-3 right-3 flex space-x-2">
-        {!editMode ? (
+    <div className="relative w-1/2 p-6 bg-white/80 rounded-xl border border-sky-200 shadow-sm">
+      {/* Header Actions */}
+      <div className="absolute top-4 right-4 flex gap-2">
+        {!isEditing ? (
           <button
             onClick={handleEdit}
-            className="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            className="px-3 py-1.5 text-sm rounded-md bg-sky-600 text-white hover:bg-sky-700"
           >
             Edit
           </button>
@@ -67,13 +125,13 @@ const FeatureEdit: React.FC<FeatureEditProps> = ({ data, thingId }) => {
           <>
             <button
               onClick={handleSave}
-              className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600"
+              className="px-3 py-1.5 text-sm rounded-md bg-green-600 text-white hover:bg-green-700"
             >
               Save
             </button>
             <button
               onClick={handleCancel}
-              className="px-3 py-1 bg-gray-400 text-white rounded-md hover:bg-gray-500"
+              className="px-3 py-1.5 text-sm rounded-md bg-gray-400 text-white hover:bg-gray-500"
             >
               Cancel
             </button>
@@ -81,21 +139,35 @@ const FeatureEdit: React.FC<FeatureEditProps> = ({ data, thingId }) => {
         )}
       </div>
 
-      <h2 className="text-2xl font-semibold mb-4 text-gray-800">
+      <h2 className="text-xl font-semibold mb-4 text-slate-800">
         Feature Editor
       </h2>
 
-      <pre className="bg-gray-50 text-gray-800 p-4 rounded-lg text-sm font-mono overflow-x-auto min-h-[200px]">
-        {!editMode ? (
-          <>{json}</>
+      <div className="space-y-4 text-sm">
+        {Object.keys(draftData).length === 0 ? (
+          <p className="opacity-60">No features</p>
         ) : (
-          <textarea
-            value={json}
-            onChange={(e) => setJson(e.target.value)}
-            className="w-full h-64 bg-gray-50 outline-none resize-none font-mono"
-          />
+          Object.entries(draftData).map(([featureName, featureObj]: any) => (
+            <div
+              key={featureName}
+              className="p-3 rounded-lg bg-sky-50 border border-sky-100"
+            >
+              <div className="font-semibold text-sky-700 capitalize mb-1">
+                {featureName.replaceAll("_", " ")}
+              </div>
+
+              {featureObj?.properties ? (
+                renderEditable(featureObj.properties, [
+                  featureName,
+                  "properties",
+                ])
+              ) : (
+                <p className="opacity-60">No properties</p>
+              )}
+            </div>
+          ))
         )}
-      </pre>
+      </div>
     </div>
   );
 };

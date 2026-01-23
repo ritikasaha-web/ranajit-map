@@ -32,10 +32,10 @@ export const monopoleComponentSet: Set<string> = new Set([
 ]);
 export const tripoleComponentSet: Set<string> = new Set([
   "antenna_mounting_frames",
+  "cable",
   "antenna",
   "backup_supply",
   "beacon",
-  "cable",
   "down_conductor",
   "equipment_shelter",
   "fuel_tank",
@@ -52,6 +52,7 @@ export const guyedMastComponentSet: Set<string> = new Set([
   "antenna",
   "backup_supply",
   "beacon",
+  "cable",
   "equipment_shelter",
   "fuel_tank",
   "ladder",
@@ -62,3 +63,10 @@ export const guyedMastComponentSet: Set<string> = new Set([
   "tma",
   "guyed_mast",
 ]);
+
+export function formatLabel(value: string): string {
+  return value
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}

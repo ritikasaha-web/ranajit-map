@@ -1,41 +1,84 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { formatLabel } from "@/app/constants/component_names";
 
 const twinOverview = ({ currTower }: { currTower: any }) => {
   const router = useRouter();
 
   if (!currTower) {
     return (
-      <div className="w-[30%] h-screen border-2 border-primary bg-primary-foreground flex items-center justify-center">
-        <h1 className="text-lg opacity-70">Select a tower</h1>
+      <div className="w-[30%] h-screen border-2 border-sky-400 bg-sky-50 flex items-center justify-center">
+        <h1 className="text-sm text-slate-500">Select a tower</h1>
       </div>
     );
   }
 
   const { thingId, attributes = {}, features = {} } = currTower;
 
-  const renderObject = (obj: any) => {
-    if (!obj || typeof obj !== "object") return null;
+  /* -----------------------------
+     Recursive renderer
+  ----------------------------- */
+  const renderRecursive = (data: any) => {
+    if (data === null || data === undefined) {
+      return <span className="text-slate-400">—</span>;
+    }
 
+    // Primitive
+    if (typeof data !== "object") {
+      return (
+        <span className="text-slate-700">
+          {typeof data === "string" ? formatLabel(data) : String(data)}
+        </span>
+      );
+    }
+
+    // Array
+    if (Array.isArray(data)) {
+      return (
+        <div className="ml-4 space-y-1">
+          {data.map((item, i) => (
+            <div key={i} className="text-slate-700">
+              • {renderRecursive(item)}
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // Object (THIS is the important part)
     return (
-      <div className="mt-2 space-y-2">
-        {Object.entries(obj).map(([key, value]) => {
-          const isObject = value && typeof value === "object";
+      <div className="ml-2 space-y-2">
+        {Object.entries(data).map(([key, value]) => {
+          const isPrimitive =
+            value === null || value === undefined || typeof value !== "object";
 
           return (
-            <div key={key} className="border-b pb-1">
-              <span className="font-semibold capitalize">{key}:</span>{" "}
-              {!isObject ? (
-                <span className="text-sm opacity-90 capitalize">
-                  {value !== undefined && value !== null
-                    ? String(value).replaceAll("_", " ")
-                    : "—"}
-                </span>
+            <div key={key}>
+              {/* Label + primitive inline */}
+              {isPrimitive ? (
+                <div className="flex gap-2">
+                  <span className="font-medium text-slate-800">
+                    {formatLabel(key)}:
+                  </span>
+                  <span className="text-slate-700">
+                    {typeof value === "string"
+                      ? formatLabel(value)
+                      : String(value)}
+                  </span>
+                </div>
               ) : (
-                <pre className="text-xs mt-1 p-2 bg-muted rounded">
-                  {JSON.stringify(value, null, 2)}
-                </pre>
+                <>
+                  {/* Label */}
+                  <div className="font-medium text-slate-800">
+                    {formatLabel(key)}:
+                  </div>
+
+                  {/* Nested content */}
+                  <div className="ml-4 mt-1 border-l border-sky-300 pl-3">
+                    {renderRecursive(value)}
+                  </div>
+                </>
               )}
             </div>
           );
@@ -44,55 +87,25 @@ const twinOverview = ({ currTower }: { currTower: any }) => {
     );
   };
 
-  // Recursive renderer for ANY JSON shape
-  const renderRecursive = (data: any) => {
-    if (data === null || data === undefined)
-      return <span className="opacity-50">—</span>;
-
-    // Primitive values
-    if (typeof data !== "object") {
-      return <span>{String(data)}</span>;
-    }
-
-    // Arrays
-    if (Array.isArray(data)) {
-      return (
-        <ul className="ml-4 list-disc">
-          {data.map((item, i) => (
-            <li key={i}>{renderRecursive(item)}</li>
-          ))}
-        </ul>
-      );
-    }
-
-    // Objects
-    return (
-      <div className="ml-2 border-l pl-3 mt-2 space-y-2">
-        {Object.entries(data).map(([key, value]) => (
-          <div key={key}>
-            <span className="font-semibold capitalize">{key}: </span>
-            <div className="mt-1">{renderRecursive(value)}</div>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  // Features are nested differently → each feature has "properties"
+  /* -----------------------------
+     Features renderer
+  ----------------------------- */
   const renderFeatures = (featuresObj: any) => {
     return (
-      <div className="mt-2 space-y-3">
+      <div className="mt-3 space-y-4">
         {Object.entries(featuresObj).map(([featureName, featureData]: any) => (
           <div
             key={featureName}
-            className="border p-2 rounded bg-muted/40 shadow-sm"
+            className="rounded-lg border border-sky-300 bg-sky-100/50 p-3"
           >
-            <h3 className="font-semibold mb-1 capitalize">{featureName}</h3>
+            <h3 className="font-semibold text-sky-700 mb-2">
+              {formatLabel(featureName)}
+            </h3>
 
             {featureData?.properties ? (
-              renderObject(featureData.properties)
+              renderRecursive(featureData.properties)
             ) : (
-              <p className="text-sm opacity-70 italic">No properties</p>
+              <p className="text-xs text-slate-500 italic">No properties</p>
             )}
           </div>
         ))}
@@ -101,46 +114,43 @@ const twinOverview = ({ currTower }: { currTower: any }) => {
   };
 
   return (
-    <div className="w-[30%] h-screen border-2 border-primary bg-primary-foreground">
+    <div className="w-[30%] h-screen border-2 border-sky-400 bg-sky-50 text-slate-800 flex flex-col">
       {/* Header */}
-      <div className="w-full h-[10%] border-b-2 border-primary flex items-center justify-center">
-        <h1 className="text-xl tracking-wide font-semibold">
-          {thingId ?? "Tower Name"}
+      <div className="h-[10%] flex items-center justify-center border-b-2 border-sky-400 bg-white/90">
+        <h1 className="text-lg font-semibold tracking-wide">
+          {thingId ? formatLabel(thingId) : "Tower Name"}
         </h1>
       </div>
 
       {/* Attributes */}
-      <div className="w-full h-[40%] border-b-2 border-primary p-4 overflow-y-auto">
-        <h1 className="text-lg font-semibold mb-2">Attributes</h1>
-        <hr className="opacity-50" />
+      <div className="h-[40%] p-4 overflow-y-auto border-b-2 border-sky-400 bg-white/70">
+        <h2 className="text-sm font-semibold text-slate-800 mb-2">
+          Attributes
+        </h2>
         {renderRecursive(attributes)}
       </div>
 
       {/* Features */}
-      <div className="w-full h-[40%] border-b-2 border-primary p-4 overflow-y-auto">
-        <h1 className="text-lg font-semibold mb-2">Features</h1>
-        <hr className="opacity-50" />
+      <div className="h-[40%] p-4 overflow-y-auto border-b-2 border-sky-400 bg-white/70">
+        <h2 className="text-sm font-semibold text-slate-800 mb-2">Features</h2>
         {renderFeatures(features)}
       </div>
 
-      {/* Footer Actions */}
-      <div className="w-full h-[10%] flex items-center justify-center gap-2">
+      {/* Footer */}
+      <div className="h-[10%] flex items-center justify-center gap-3 bg-white/90">
         <Button
-          className="shadow-md rounded-full cursor-pointer hover:scale-105 transition"
-          onClick={() => {
-            // setShowDetails(true);
-            router.push(`/tower/${thingId}`);
-          }}
+          className="rounded-full bg-sky-600 text-white hover:bg-sky-700"
+          onClick={() => router.push(`/tower/${thingId}`)}
         >
-          View Detailed Report
+          View Details
         </Button>
 
         <Button
-          className="shadow-md rounded-full cursor-pointer hover:scale-105 transition"
+          className="rounded-full border border-sky-300 text-slate-700 bg-white hover:bg-sky-50"
           onClick={() =>
             window.open(
               `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${attributes.location?.lat},${attributes.location?.lng}`,
-              "_blank"
+              "_blank",
             )
           }
         >

@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   fourPoledComponentSet,
   monopoleComponentSet,
   tripoleComponentSet,
   guyedMastComponentSet,
 } from "@/app/constants/component_names";
-
 import { BsFullscreen } from "react-icons/bs";
 
 interface TowerPreviewProps {
@@ -21,14 +20,12 @@ const TowerPreview = ({
   installationType,
   setOpenExpandTower,
 }: TowerPreviewProps) => {
-  const formatValue = (value: string) => {
-    return value
-      .replace(/([A-Z])/g, " $1")
-      .replace(/^./, (str) => str.toUpperCase());
-  };
+  const formatValue = (value: string) =>
+    value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
   const base = `/${installationType}.png`;
   const structure = `/${structureType}/${structureType}.png`;
+
   const componentSetMap: Record<string, Set<string>> = {
     monopole: monopoleComponentSet,
     tripole: tripoleComponentSet,
@@ -39,20 +36,34 @@ const TowerPreview = ({
   const towerComponents =
     componentSetMap[structureType] ?? monopoleComponentSet;
 
-  const layeredImages = [base, structure];
-  for (let val in components) {
-    if (towerComponents.has(val) && components[val] > 0) {
-      layeredImages.push(`/${structureType}/${val}.png`);
+  /* Image layering (0-safe) */
+  const layeredImages: string[] = [base, structure];
+
+  [...towerComponents].forEach((key) => {
+    const value = components[key];
+
+    if (value === null || value === undefined) return;
+    if (typeof value === "string" && value.trim() === "") return;
+    if (typeof value === "number" && value < 0) return;
+
+    if (key === "cable" && typeof value !== "number") {
+      layeredImages.push(`/${structureType}/cable_${value}.png`);
+    } else {
+      layeredImages.push(`/${structureType}/${key}.png`);
     }
-  }
+  });
 
   return (
-    <div className="w-full max-w-3xl items-center bg-white rounded-xl">
-      {/* Layered Tower Image */}
-      <div className="absolute top-2 right-6 text-2xl cursor-pointer opacity-60 duration-150 rounded-full p-2 hover:opacity-100 z-20">
-        <BsFullscreen size={20} onClick={() => setOpenExpandTower(true)} />
-      </div>
-      <div className="relative w-[400px] h-[500px] flex-shrink-0 ">
+    <div className="w-full h-full bg-white rounded-lg p-2 flex flex-col gap-3">
+      {/* Image Section */}
+      <div className="relative w-full h-[320px] bg-white rounded-md border border-slate-300 overflow-hidden flex items-center justify-center">
+        <button
+          onClick={() => setOpenExpandTower(true)}
+          className="absolute top-2 right-2 z-10 rounded-full p-1.5 bg-transparent duration-200 border border-slate-300 text-slate-600 hover:bg-slate-100"
+        >
+          <BsFullscreen size={16} />
+        </button>
+
         {layeredImages.map((src, index) => (
           <img
             key={index}
@@ -63,22 +74,36 @@ const TowerPreview = ({
         ))}
       </div>
 
-      {/* Scrollable Key–Value Data */}
-      <div className="flex-1 flex flex-col gap-3 max-h-64 overflow-y-auto pr-2 text-xs">
-        <h2 className="text-lg font-semibold mb-2 sticky top-0 bg-white py-2 z-10">
+      {/* Details Section */}
+      <div className="flex-1 overflow-y-auto text-xs">
+        <h2 className="text-sm font-semibold text-slate-800 mb-2">
           Tower Details
         </h2>
 
-        <div className="flex flex-col gap-2">
-          {Object.entries(components).map(([key, value]) => (
-            <div
-              key={key}
-              className="flex justify-between border-b pb-1 text-[11px]"
-            >
-              <span className="font-medium">{formatValue(String(key))}</span>
-              <span className="text-gray-700">{String(value)}</span>
-            </div>
-          ))}
+        <div className="space-y-1">
+          {[...towerComponents]
+            .filter((key) => {
+              const v = components[key];
+              if (v === null || v === undefined) return false;
+              if (typeof v === "string") return v.trim() !== "";
+              if (typeof v === "number") return true;
+              if (typeof v === "boolean") return true;
+              return false;
+            })
+            .map((key) => (
+              <div
+                key={key}
+                className="grid grid-cols-[1fr_auto] gap-2 items-center border-b border-slate-200 py-0.5"
+              >
+                <span className="text-slate-700 font-medium">
+                  {formatValue(key)}
+                </span>
+
+                <span className="text-slate-800 font-semibold tabular-nums">
+                  {formatValue(String(components[key]))}
+                </span>
+              </div>
+            ))}
         </div>
       </div>
     </div>

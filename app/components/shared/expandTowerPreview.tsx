@@ -1,7 +1,20 @@
-import React from "react";
+import React, { useState } from "react";
 import { RxCross2 } from "react-icons/rx";
 import { LuEye } from "react-icons/lu";
-import { useState } from "react";
+import {
+  fourPoledComponentSet,
+  guyedMastComponentSet,
+  tripoleComponentSet,
+  monopoleComponentSet,
+  formatLabel,
+} from "@/app/constants/component_names";
+
+const componentSetMap: Record<string, Set<string>> = {
+  monopole: monopoleComponentSet,
+  tripole: tripoleComponentSet,
+  four_pole: fourPoledComponentSet,
+  guyed_mast: guyedMastComponentSet,
+};
 
 const ExpandTowerPreview = ({
   onClose,
@@ -12,113 +25,134 @@ const ExpandTowerPreview = ({
 }) => {
   const towerItems = currTower?.features?.components?.properties || {};
 
-  const Compoenents = currTower?.features?.components?.properties || {};
+  const orderedTowerItems = Object.fromEntries(
+    [
+      ...(componentSetMap[currTower?.attributes?.structure_type] ??
+        monopoleComponentSet),
+    ].map((key) => [key, towerItems[key]]),
+  );
 
   const [activeComponents, setActiveComponents] = useState<Set<string>>(
     new Set(),
   );
+
   const toggleComponent = (component: string) => {
     setActiveComponents((prev) => {
       const next = new Set(prev);
-
-      if (next.has(component)) {
-        next.delete(component);
-      } else {
-        next.add(component);
-      }
-
+      next.has(component) ? next.delete(component) : next.add(component);
       return next;
     });
   };
-  const shouldRenderComponent = (component: string) => {
-    // If nothing is selected → show all
-    if (activeComponents.size === 0) return true;
 
-    // Otherwise show only selected ones
+  const shouldRenderComponent = (component: string) => {
+    const value = towerItems[component];
+
+    if (value === undefined || value === null) return false;
+    if (typeof value === "number" && value <= 0) return false;
+    if (typeof value === "string" && value.trim() === "") return false;
+
+    if (activeComponents.size === 0) return true;
     return activeComponents.has(component);
   };
 
   return (
-    <div className="flex h-screen w-screen items-center justify-center dim-background absolute inset-0 z-9999">
-      <div className="flex relative h-4/5 w-4/5 rounded-3xl bg-white place-items-center gap-6 p-6">
-        <div className="absolute top-6 right-6 text-3xl cursor-pointer opacity-60 duration-150 rounded-full bg-black/10 p-0.5 hover:opacity-100">
-          <RxCross2 onClick={onClose} />
-        </div>
-        <div className="w-1/2 bg-white rounded-3xl">
-          <div className="relative w-full h-[500px] rounded-3xl ">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="relative flex h-[85vh] w-[85vw] rounded-3xl bg-white shadow-2xl p-6 gap-6">
+        {/* Close */}
+        <button
+          onClick={onClose}
+          className="absolute top-5 right-5 rounded-full p-2 bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 transition"
+        >
+          <RxCross2 size={22} />
+        </button>
+
+        {/* LEFT : Tower Visual */}
+        <div className="w-1/2 rounded-2xl bg-white border border-slate-200 p-4 flex items-center justify-center">
+          <div className="relative w-full h-[520px] bg-white rounded-xl overflow-hidden">
             <img
-              src={
-                `/${currTower?.attributes?.installation_type}.png` || "/GBT.png"
-              }
-              alt="Installation Type"
+              src={`/${currTower?.attributes?.installation_type}.png`}
+              alt="Installation"
               className="absolute inset-0 w-full h-full object-contain pointer-events-none"
             />
 
             <img
-              src={
-                `/${currTower?.attributes?.structure_type}/${currTower?.attributes?.structure_type}.png` ||
-                "/four_pole/four_pole.png"
-              }
-              alt="Four Pole"
+              src={`/${currTower?.attributes?.structure_type}/${currTower?.attributes?.structure_type}.png`}
+              alt="Structure"
               className="absolute inset-0 w-full h-full object-contain pointer-events-none"
             />
 
-            {Object.keys(towerItems)
+            {Object.keys(orderedTowerItems)
               .filter((item) => shouldRenderComponent(item))
-              .map((item: string) => (
+              .map((item) => (
                 <img
                   key={item}
-                  src={`/${currTower?.attributes?.structure_type}/${item}.png`}
+                  src={`/${currTower?.attributes?.structure_type}/${
+                    item === "cable" ? `${item}_${towerItems[item]}` : item
+                  }.png`}
                   alt={item}
                   className="absolute inset-0 w-full h-full object-contain pointer-events-none"
                 />
               ))}
           </div>
         </div>
-        <hr className=" w-0.5 h-4/5 bg-black rounded-md" />
-        <div className="w-1/2 h-4/5">
+
+        {/* Divider */}
+        <div className="w-px bg-slate-200 rounded-full" />
+
+        {/* RIGHT : Details */}
+        <div className="w-1/2 flex flex-col">
+          {/* Header */}
           <div>
-            <h1 className="text-2xl font-semibold">{currTower?.thingId}</h1>
-          </div>
-          <div className="my-4 flex place-items-center text-xl">
-            <div>
-              {currTower?.attributes?.structure_type === "monopole" &&
-              currTower?.attributes?.installation_type === "GBT"
-                ? "GBM"
-                : currTower?.attributes?.installation_type}
-              {/* {currTower?.attributes?.installation_type === "GBM"
-                ? "GBT"
-                : currTower?.attributes?.installation_type} */}
+            <h1 className="text-2xl font-semibold text-slate-800">
+              {currTower?.thingId}
+            </h1>
+
+            <div className="mt-2 flex items-center gap-3 text-slate-600">
+              <span className="text-sm font-medium">
+                {currTower?.attributes?.structure_type === "monopole" &&
+                currTower?.attributes?.installation_type === "GBT"
+                  ? "GBM"
+                  : currTower?.attributes?.installation_type}
+              </span>
+
+              <span className="h-4 w-px bg-slate-300" />
+
+              <span className="text-sm font-medium capitalize">
+                {currTower?.attributes?.structure_type
+                  ?.replace(/_/g, " ")
+                  .toLowerCase()
+                  .replace(/\b\w/g, (c: string) => c.toUpperCase())}
+              </span>
             </div>
-            <hr className="bg-black opacity-80 w-px h-4 mx-2" />
-            <div>
-              {" "}
-              {currTower?.attributes?.structure_type
-                ?.replace(/_/g, " ")
-                .toLowerCase()
-                .replace(/\b\w/g, (c: any) => c.toUpperCase())}
-            </div>
           </div>
-          <div className="h-4/5 overflow-y-auto pr-2 space-y-4">
-            {Object.entries(Compoenents).map(([key, value], index) => (
+
+          {/* Components list */}
+          <div className="mt-6 flex-1 overflow-y-auto pr-2 space-y-2">
+            {Object.entries(towerItems).map(([key, value]) => (
               <div
-                key={index}
-                className="flex justify-between border-b text-lg"
+                key={key}
+                className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 hover:bg-slate-50 transition"
               >
-                <span className="">{String(key)}</span>
-                <span className="flex gap-4 items-center">
-                  <div>{String(value)}</div>
-                  <div
-                    onClick={() => toggleComponent(String(key))}
-                    className={`cursor-pointer transition-colors ${
-                      activeComponents.has(String(key))
-                        ? "text-blue-600"
-                        : "text-gray-400"
+                <span className="text-sm font-medium text-slate-700 capitalize">
+                  {key.replace(/_/g, " ")}
+                </span>
+
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-slate-600">
+                    {formatLabel(String(value))}
+                  </span>
+
+                  <button
+                    onClick={() => toggleComponent(key)}
+                    className={`transition-colors ${
+                      activeComponents.has(key)
+                        ? "text-sky-600"
+                        : "text-slate-400 hover:text-slate-600"
                     }`}
                   >
-                    <LuEye />
-                  </div>
-                </span>
+                    <LuEye size={18} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>

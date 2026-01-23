@@ -85,8 +85,8 @@ const TowerMap = ({
       (t: any) =>
         [t.attributes.location.lat, t.attributes.location.lng] as [
           number,
-          number
-        ]
+          number,
+        ],
     );
   }, [towers]);
 

@@ -18,22 +18,31 @@ export default function EditTwin({ data }: EditTwinProps) {
   const attributes = data?.attributes || {};
 
   return (
-    <main className="min-h-screen bg-background p-8 pb-0">
+    <section className="bg-sky-50/60 p-4 rounded-xl">
       <div className="w-full mx-auto">
         <Accordion type="single" collapsible defaultValue="item-1">
-          <AccordionItem value="item-1">
-            <AccordionTrigger className="pr-4">
-              <div className="text-2xl font-semibold">Edit Twin</div>
+          <AccordionItem
+            value="item-1"
+            className="border border-sky-200 rounded-xl bg-white/70 backdrop-blur"
+          >
+            <AccordionTrigger className="px-4 py-3 hover:no-underline">
+              <div className="text-xl font-semibold text-slate-800">
+                Edit Twin
+              </div>
             </AccordionTrigger>
+
             <AccordionContent>
-              <div className="flex w-full gap-4 border-4 border-primary p-4 rounded-lg">
+              <div className="flex w-full gap-4 p-4 rounded-lg border border-sky-200 bg-white/80">
+                {/* Attribute first (as requested earlier) */}
+                <AttributeEdit data={attributes} thingId={data?.thingId} />
+
+                {/* Feature second */}
                 <FeatureEdit data={features} thingId={data?.thingId} />
-                <AttributeEdit data={attributes} />
               </div>
             </AccordionContent>
           </AccordionItem>
         </Accordion>
       </div>
-    </main>
+    </section>
   );
 }
