@@ -35,6 +35,8 @@ const ExpandTowerPreview = ({
   const [activeComponents, setActiveComponents] = useState<Set<string>>(
     new Set(),
   );
+  const [zoom, setZoom] = useState(false);
+  const [origin, setOrigin] = useState({ x: 50, y: 50 });
 
   const toggleComponent = (component: string) => {
     setActiveComponents((prev) => {
@@ -57,30 +59,49 @@ const ExpandTowerPreview = ({
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <button
+        onClick={onClose}
+        className="absolute top-5 right-5 rounded-full p-2 bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 transition"
+      >
+        <RxCross2 size={22} />
+      </button>
       <div className="relative flex h-[85vh] w-[85vw] rounded-3xl bg-white shadow-2xl p-6 gap-6">
         {/* Close */}
-        <button
-          onClick={onClose}
-          className="absolute top-5 right-5 rounded-full p-2 bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 transition"
-        >
-          <RxCross2 size={22} />
-        </button>
 
         {/* LEFT : Tower Visual */}
-        <div className="w-1/2 rounded-2xl bg-white border border-slate-200 p-4 flex items-center justify-center">
-          <div className="relative w-full h-[520px] bg-white rounded-xl overflow-hidden">
+        <div
+          className="relative w-full h-[500px] bg-white rounded-xl overflow-hidden border border-slate-300"
+          onMouseEnter={() => setZoom(true)}
+          onMouseLeave={() => setZoom(false)}
+          onMouseMove={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            setOrigin({ x, y });
+          }}
+        >
+          <div
+            className="absolute inset-0 transition-transform duration-200 ease-out"
+            style={{
+              transform: zoom ? "scale(1.8)" : "scale(1)",
+              transformOrigin: `${origin.x}% ${origin.y}%`,
+            }}
+          >
+            {/* Base */}
             <img
               src={`/${currTower?.attributes?.installation_type}.png`}
               alt="Installation"
               className="absolute inset-0 w-full h-full object-contain pointer-events-none"
             />
 
+            {/* Structure */}
             <img
               src={`/${currTower?.attributes?.structure_type}/${currTower?.attributes?.structure_type}.png`}
               alt="Structure"
               className="absolute inset-0 w-full h-full object-contain pointer-events-none"
             />
 
+            {/* Components */}
             {Object.keys(orderedTowerItems)
               .filter((item) => shouldRenderComponent(item))
               .map((item) => (
@@ -103,7 +124,7 @@ const ExpandTowerPreview = ({
         <div className="w-1/2 flex flex-col">
           {/* Header */}
           <div>
-            <h1 className="text-2xl font-semibold text-slate-800">
+            <h1 className="text-xl font-semibold text-slate-800">
               {currTower?.thingId}
             </h1>
 

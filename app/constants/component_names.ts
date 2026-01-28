@@ -45,14 +45,13 @@ export const tripoleComponentSet: Set<string> = new Set([
   "power_cabinate",
   "rf_jumpers",
   "rrh",
-  "tripole",
   "waveguides",
 ]);
 export const guyedMastComponentSet: Set<string> = new Set([
+  "cable",
   "antenna",
   "backup_supply",
   "beacon",
-  "cable",
   "equipment_shelter",
   "fuel_tank",
   "ladder",
@@ -61,7 +60,6 @@ export const guyedMastComponentSet: Set<string> = new Set([
   "power_cabinate",
   "rrh",
   "tma",
-  "guyed_mast",
 ]);
 
 export function formatLabel(value: string): string {
@@ -70,3 +68,9 @@ export function formatLabel(value: string): string {
     .toLowerCase()
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
+
+export const upperCaseSet: Set<string> = new Set([
+  "model",
+  "installation_type",
+]);
+export const lowerCaseSet: Set<string> = new Set([]);

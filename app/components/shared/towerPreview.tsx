@@ -4,6 +4,7 @@ import {
   monopoleComponentSet,
   tripoleComponentSet,
   guyedMastComponentSet,
+  formatLabel,
 } from "@/app/constants/component_names";
 import { BsFullscreen } from "react-icons/bs";
 
@@ -20,9 +21,6 @@ const TowerPreview = ({
   installationType,
   setOpenExpandTower,
 }: TowerPreviewProps) => {
-  const formatValue = (value: string) =>
-    value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-
   const base = `/${installationType}.png`;
   const structure = `/${structureType}/${structureType}.png`;
 
@@ -96,11 +94,11 @@ const TowerPreview = ({
                 className="grid grid-cols-[1fr_auto] gap-2 items-center border-b border-slate-200 py-0.5"
               >
                 <span className="text-slate-700 font-medium">
-                  {formatValue(key)}
+                  {formatLabel(key)}
                 </span>
 
                 <span className="text-slate-800 font-semibold tabular-nums">
-                  {formatValue(String(components[key]))}
+                  {formatLabel(String(components[key]))}
                 </span>
               </div>
             ))}

@@ -1,7 +1,11 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { formatLabel } from "@/app/constants/component_names";
+import {
+  formatLabel,
+  upperCaseSet,
+  lowerCaseSet,
+} from "@/app/constants/component_names";
 
 const twinOverview = ({ currTower }: { currTower: any }) => {
   const router = useRouter();
@@ -16,9 +20,6 @@ const twinOverview = ({ currTower }: { currTower: any }) => {
 
   const { thingId, attributes = {}, features = {} } = currTower;
 
-  /* -----------------------------
-     Recursive renderer
-  ----------------------------- */
   const renderRecursive = (data: any) => {
     if (data === null || data === undefined) {
       return <span className="text-slate-400">—</span>;
@@ -62,9 +63,11 @@ const twinOverview = ({ currTower }: { currTower: any }) => {
                     {formatLabel(key)}:
                   </span>
                   <span className="text-slate-700">
-                    {typeof value === "string"
-                      ? formatLabel(value)
-                      : String(value)}
+                    {upperCaseSet.has(key)
+                      ? String(value)
+                      : typeof value === "string"
+                        ? formatLabel(value)
+                        : String(value)}
                   </span>
                 </div>
               ) : (
@@ -87,9 +90,6 @@ const twinOverview = ({ currTower }: { currTower: any }) => {
     );
   };
 
-  /* -----------------------------
-     Features renderer
-  ----------------------------- */
   const renderFeatures = (featuresObj: any) => {
     return (
       <div className="mt-3 space-y-4">
@@ -118,7 +118,7 @@ const twinOverview = ({ currTower }: { currTower: any }) => {
       {/* Header */}
       <div className="h-[10%] flex items-center justify-center border-b-2 border-sky-400 bg-white/90">
         <h1 className="text-lg font-semibold tracking-wide">
-          {thingId ? formatLabel(thingId) : "Tower Name"}
+          {thingId ? thingId : "Tower Name"}
         </h1>
       </div>
 
