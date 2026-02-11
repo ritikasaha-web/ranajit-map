@@ -1,6 +1,5 @@
 export const fourPoledComponentSet: Set<string> = new Set([
   "antenna",
-  "backup_supply",
   "beacon",
   "cable",
   "equipment_shelter",
@@ -12,16 +11,16 @@ export const fourPoledComponentSet: Set<string> = new Set([
   "rrh",
   "tma",
   "waveguides",
+  "diesel_generator",
+  "fcu",
 ]);
 
 export const monopoleComponentSet: Set<string> = new Set([
   "antenna",
   "antenna_mounting_frames",
-  "backup_supply",
   "beacon",
   "cable",
   "down_conductor",
-  "equipment_shelter",
   "fuel_tank",
   "lightning_rod",
   "microwave",
@@ -29,14 +28,15 @@ export const monopoleComponentSet: Set<string> = new Set([
   "power_cabinate",
   "rf_jumpers",
   "rru",
+  "equipment_shelter",
+  "fcu",
+  "diesel_generator",
 ]);
 export const tripoleComponentSet: Set<string> = new Set([
   "antenna_mounting_frames",
   "cable",
   "antenna",
-  "backup_supply",
   "beacon",
-  "down_conductor",
   "equipment_shelter",
   "fuel_tank",
   "ladder",
@@ -46,21 +46,32 @@ export const tripoleComponentSet: Set<string> = new Set([
   "rf_jumpers",
   "rrh",
   "waveguides",
+  "diesel_generator",
+  "fcu",
 ]);
 export const guyedMastComponentSet: Set<string> = new Set([
   "cable",
   "antenna",
-  "backup_supply",
   "beacon",
-  "equipment_shelter",
-  "fuel_tank",
+  "down_conductor",
   "ladder",
+  "equipment_shelter",
   "lightning_rod",
   "microwave",
   "power_cabinate",
+  "fuel_tank",
   "rrh",
   "tma",
+  "diesel_generator",
+  "fcu",
 ]);
+
+export const baseTypes: Record<string, string> = {
+  RTT: "RTT",
+  GBT: "GBT",
+  GBM: "GBT",
+  PYLON: "PYLON",
+};
 
 export function formatLabel(value: string): string {
   return value
@@ -69,8 +80,44 @@ export function formatLabel(value: string): string {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+export const applyFormatting = (text: string) => {
+  const normalized = text.toLowerCase();
+
+  if (upperCaseSet.has(normalized)) {
+    return text.toUpperCase();
+  }
+
+  return formatLabel(text);
+};
+
 export const upperCaseSet: Set<string> = new Set([
   "model",
   "installation_type",
+  "spr",
+  "slr",
+  "fcu",
+  "rrh",
+  "rru",
+  "smps",
+  "4g-rmu",
+  "amf",
+  "dcem",
+  "odc",
+  "imps",
+  "mtib",
+  "shl",
+  "stb",
+  "tma",
+  "tmib",
+  "wcdma-rmu",
+  "misc",
+  "bk cab",
+  "abb",
+  "sim",
+  "dcdb",
+  "dgb",
+  "rm",
+  "ac",
+  "rtu",
 ]);
 export const lowerCaseSet: Set<string> = new Set([]);

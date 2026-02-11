@@ -6,8 +6,11 @@ import {
   guyedMastComponentSet,
   tripoleComponentSet,
   monopoleComponentSet,
+  baseTypes,
   formatLabel,
 } from "@/app/constants/component_names";
+import { useTower } from "@/app/hooks/getTowers";
+import { useTowerStore, useExpandTowerStore } from "@/app/store/useTowerStore";
 
 const componentSetMap: Record<string, Set<string>> = {
   monopole: monopoleComponentSet,
@@ -16,13 +19,8 @@ const componentSetMap: Record<string, Set<string>> = {
   guyed_mast: guyedMastComponentSet,
 };
 
-const ExpandTowerPreview = ({
-  onClose,
-  currTower,
-}: {
-  onClose: () => void;
-  currTower: any;
-}) => {
+const ExpandTowerPreview = () => {
+  const { data: currTower } = useTower(useTowerStore((s) => s.selectedTowerId));
   const towerItems = currTower?.features?.components?.properties || {};
 
   const orderedTowerItems = Object.fromEntries(
@@ -56,11 +54,14 @@ const ExpandTowerPreview = ({
     if (activeComponents.size === 0) return true;
     return activeComponents.has(component);
   };
+  const setExpandState = useExpandTowerStore(
+    (state) => state.setOpenExpandTower,
+  );
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <button
-        onClick={onClose}
+        onClick={() => setExpandState(false)}
         className="absolute top-5 right-5 rounded-full p-2 bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 transition"
       >
         <RxCross2 size={22} />
@@ -89,7 +90,7 @@ const ExpandTowerPreview = ({
           >
             {/* Base */}
             <img
-              src={`/${currTower?.attributes?.installation_type}.png`}
+              src={`/${baseTypes[currTower?.attributes?.installation_type]}.png`}
               alt="Installation"
               className="absolute inset-0 w-full h-full object-contain pointer-events-none"
             />

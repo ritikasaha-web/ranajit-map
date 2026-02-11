@@ -6,23 +6,11 @@ import dynamic from "next/dynamic";
 const TowerMap = dynamic(() => import("./towerMap"), {
   ssr: false,
 });
-const TowerView = ({
-  currTower,
-  setcurrTower,
-  setOpenExpandTower,
-}: {
-  currTower: any;
-  setcurrTower: React.Dispatch<React.SetStateAction<any>>;
-  setOpenExpandTower: React.Dispatch<React.SetStateAction<boolean>>;
-}) => {
+const TowerView = () => {
   return (
     <div className="flex">
-      <TowerMap
-        currTower={currTower}
-        setcurrTower={setcurrTower}
-        setOpenExpandTower={setOpenExpandTower}
-      />
-      <TwinOverview currTower={currTower} />
+      <TowerMap />
+      <TwinOverview />
     </div>
   );
 };

@@ -4,25 +4,25 @@ import {
   monopoleComponentSet,
   tripoleComponentSet,
   guyedMastComponentSet,
+  baseTypes,
   formatLabel,
 } from "@/app/constants/component_names";
 import { BsFullscreen } from "react-icons/bs";
+import { useExpandTowerStore } from "@/app/store/useTowerStore";
 
 interface TowerPreviewProps {
   structureType: string;
   installationType: string;
   components: Record<string, any>;
-  setOpenExpandTower: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const TowerPreview = ({
   components,
   structureType,
   installationType,
-  setOpenExpandTower,
 }: TowerPreviewProps) => {
-  const base = `/${installationType}.png`;
-  const structure = `/${structureType}/${structureType}.png`;
+  const installation_type = `/${baseTypes[installationType]}.png`;
+  const structure: string = `/${structureType}/${structureType}.png`;
 
   const componentSetMap: Record<string, Set<string>> = {
     monopole: monopoleComponentSet,
@@ -34,8 +34,8 @@ const TowerPreview = ({
   const towerComponents =
     componentSetMap[structureType] ?? monopoleComponentSet;
 
-  /* Image layering (0-safe) */
-  const layeredImages: string[] = [base, structure];
+  /* img layering (0-safe) */
+  const layeredimgs: string[] = [installation_type, structure];
 
   [...towerComponents].forEach((key) => {
     const value = components[key];
@@ -45,24 +45,28 @@ const TowerPreview = ({
     if (typeof value === "number" && value < 0) return;
 
     if (key === "cable" && typeof value !== "number") {
-      layeredImages.push(`/${structureType}/cable_${value}.png`);
+      layeredimgs.push(`/${structureType}/cable_${value}.png`);
     } else {
-      layeredImages.push(`/${structureType}/${key}.png`);
+      layeredimgs.push(`/${structureType}/${key}.png`);
     }
   });
 
+  const setExpandState = useExpandTowerStore(
+    (state) => state.setOpenExpandTower,
+  );
+
   return (
     <div className="w-full h-full bg-white rounded-lg p-2 flex flex-col gap-3">
-      {/* Image Section */}
+      {/* img Section */}
       <div className="relative w-full h-[320px] bg-white rounded-md border border-slate-300 overflow-hidden flex items-center justify-center">
         <button
-          onClick={() => setOpenExpandTower(true)}
+          onClick={() => setExpandState(true)}
           className="absolute top-2 right-2 z-10 rounded-full p-1.5 bg-transparent duration-200 border border-slate-300 text-slate-600 hover:bg-slate-100"
         >
           <BsFullscreen size={16} />
         </button>
 
-        {layeredImages.map((src, index) => (
+        {layeredimgs.map((src, index) => (
           <img
             key={index}
             src={src}

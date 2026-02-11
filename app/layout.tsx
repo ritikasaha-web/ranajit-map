@@ -1,4 +1,7 @@
+"use client";
+import React, { useState } from "react";
 import "./globals.css";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 
 export default function RootLayout({
@@ -6,6 +9,18 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 5 * 60 * 1000, // 5 min cache
+            retry: 1,
+            refetchOnWindowFocus: false,
+          },
+        },
+      }),
+  );
   return (
     <html lang="en">
       <head>
@@ -15,7 +30,11 @@ export default function RootLayout({
         </style>
       </head>
       <body>
-        <main>{children}</main>
+        <main>
+          <QueryClientProvider client={queryClient}>
+            {children}
+          </QueryClientProvider>
+        </main>
         <Toaster />
       </body>
     </html>
