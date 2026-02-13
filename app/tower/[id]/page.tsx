@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import EditTwin from "@/app/components/common/editTwin";
 import { getTwinById } from "@/app/api/endpoints";
 import { Button } from "@/components/ui/button";
+import { applyFormatting } from "@/app/constants/component_names";
 
 const TowerDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -33,13 +34,15 @@ const TowerDetails = () => {
   /* -----------------------------
      Recursive Renderer (KEY FIX)
   ----------------------------- */
-  const renderRecursive = (data: any) => {
+  const renderRecursive = (data: any): React.ReactNode => {
     if (data === null || data === undefined)
       return <span className="opacity-50">—</span>;
 
     if (typeof data !== "object") {
       return (
-        <span className="capitalize">{String(data).replaceAll("_", " ")}</span>
+        <span>
+          {typeof data === "string" ? applyFormatting(data) : String(data)}
+        </span>
       );
     }
 
@@ -57,8 +60,8 @@ const TowerDetails = () => {
       <div className="ml-3 border-l border-sky-200 pl-3 space-y-2">
         {Object.entries(data).map(([key, value]) => (
           <div key={key}>
-            <span className="font-medium capitalize text-slate-700">
-              {key.replaceAll("_", " ")}:
+            <span className="font-medium text-slate-700">
+              {applyFormatting(key)}:
             </span>
             <div className="ml-2 text-slate-600">{renderRecursive(value)}</div>
           </div>

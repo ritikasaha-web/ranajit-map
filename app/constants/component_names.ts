@@ -1,6 +1,6 @@
 export const fourPoledComponentSet: Set<string> = new Set([
-  "antenna",
   "beacon",
+  "antenna",
   "cable",
   "equipment_shelter",
   "fuel_tank",
@@ -16,9 +16,9 @@ export const fourPoledComponentSet: Set<string> = new Set([
 ]);
 
 export const monopoleComponentSet: Set<string> = new Set([
+  "beacon",
   "antenna",
   "antenna_mounting_frames",
-  "beacon",
   "cable",
   "down_conductor",
   "fuel_tank",
@@ -27,16 +27,16 @@ export const monopoleComponentSet: Set<string> = new Set([
   "monopole",
   "power_cabinate",
   "rf_jumpers",
-  "rru",
+  "rrh",
   "equipment_shelter",
   "fcu",
   "diesel_generator",
 ]);
 export const tripoleComponentSet: Set<string> = new Set([
+  "beacon",
   "antenna_mounting_frames",
   "cable",
   "antenna",
-  "beacon",
   "equipment_shelter",
   "fuel_tank",
   "ladder",
@@ -50,9 +50,9 @@ export const tripoleComponentSet: Set<string> = new Set([
   "fcu",
 ]);
 export const guyedMastComponentSet: Set<string> = new Set([
+  "beacon",
   "cable",
   "antenna",
-  "beacon",
   "down_conductor",
   "ladder",
   "equipment_shelter",
@@ -91,8 +91,6 @@ export const applyFormatting = (text: string) => {
 };
 
 export const upperCaseSet: Set<string> = new Set([
-  "model",
-  "installation_type",
   "spr",
   "slr",
   "fcu",
@@ -119,5 +117,17 @@ export const upperCaseSet: Set<string> = new Set([
   "rm",
   "ac",
   "rtu",
+  "gbt",
+  "rtt",
+  "ipms",
+  "rms",
+  "gbm",
 ]);
-export const lowerCaseSet: Set<string> = new Set([]);
+export const lowerCaseSet: Set<string> = new Set([
+  "(mm)",
+  "mm",
+  "(cm)",
+  "cm",
+  "(m)",
+  "m",
+]);

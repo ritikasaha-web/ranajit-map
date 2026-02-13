@@ -20,7 +20,7 @@ export default function EditTwin({ data }: EditTwinProps) {
   return (
     <section className="bg-sky-50/60 p-4 rounded-xl">
       <div className="w-full mx-auto">
-        <Accordion type="single" collapsible defaultValue="item-1">
+        <Accordion type="single" collapsible>
           <AccordionItem
             value="item-1"
             className="border border-sky-200 rounded-xl bg-white/70 backdrop-blur"

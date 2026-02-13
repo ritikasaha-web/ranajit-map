@@ -1,7 +1,7 @@
 import api from "./client";
 
 export const getTwins = async () => {
-  const response = await api.get("/search/things?option=size(50)");
+  const response = await api.get("/search/things?option=size(25)");
 
   return response.data.items;
 };

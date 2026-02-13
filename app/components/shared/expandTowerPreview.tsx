@@ -7,7 +7,7 @@ import {
   tripoleComponentSet,
   monopoleComponentSet,
   baseTypes,
-  formatLabel,
+  applyFormatting,
 } from "@/app/constants/component_names";
 import { useTower } from "@/app/hooks/getTowers";
 import { useTowerStore, useExpandTowerStore } from "@/app/store/useTowerStore";
@@ -105,16 +105,21 @@ const ExpandTowerPreview = () => {
             {/* Components */}
             {Object.keys(orderedTowerItems)
               .filter((item) => shouldRenderComponent(item))
-              .map((item) => (
-                <img
-                  key={item}
-                  src={`/${currTower?.attributes?.structure_type}/${
-                    item === "cable" ? `${item}_${towerItems[item]}` : item
-                  }.png`}
-                  alt={item}
-                  className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-                />
-              ))}
+              .map(
+                (item) => (
+                  console.log(item),
+                  (
+                    <img
+                      key={item}
+                      src={`/${currTower?.attributes?.structure_type}/${
+                        item === "cable" ? `${item}_${towerItems[item]}` : item
+                      }.png`}
+                      alt={item}
+                      className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+                    />
+                  )
+                ),
+              )}
           </div>
         </div>
 
@@ -156,12 +161,13 @@ const ExpandTowerPreview = () => {
                 className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 hover:bg-slate-50 transition"
               >
                 <span className="text-sm font-medium text-slate-700 capitalize">
-                  {key.replace(/_/g, " ")}
+                  {/* {key.replace(/_/g, " ")} */}
+                  {applyFormatting(key)}
                 </span>
 
                 <div className="flex items-center gap-4">
                   <span className="text-sm text-slate-600">
-                    {formatLabel(String(value))}
+                    {applyFormatting(String(value))}
                   </span>
 
                   <button
