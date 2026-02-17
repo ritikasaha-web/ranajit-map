@@ -1,47 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import EditTwin from "@/app/components/common/editTwin";
-import { getTwinById } from "@/app/api/endpoints";
 import { Button } from "@/components/ui/button";
 import { applyFormatting } from "@/app/constants/component_names";
+import { useTower } from "@/app/hooks/getTowers";
 
 const TowerDetails = () => {
   const { id } = useParams<{ id: string }>();
   const towerName = decodeURIComponent(id);
   const router = useRouter();
 
-  const [twinData, setTwinData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchTwin = async () => {
-      try {
-        const data = await getTwinById(towerName);
-        setTwinData(data);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTwin();
-  }, [towerName]);
+  const { data: twinData, isLoading, error } = useTower(towerName ?? undefined);
 
   /* -----------------------------
      Recursive Renderer (KEY FIX)
   ----------------------------- */
-  const renderRecursive = (data: any): React.ReactNode => {
+  const renderRecursive = (data: any, parentKey?: string): React.ReactNode => {
     if (data === null || data === undefined)
       return <span className="opacity-50">—</span>;
 
     if (typeof data !== "object") {
       return (
         <span>
-          {typeof data === "string" ? applyFormatting(data) : String(data)}
+          {parentKey?.toLowerCase() === "model"
+            ? String(data).toUpperCase()
+            : typeof data === "string"
+              ? applyFormatting(data)
+              : String(data)}
         </span>
       );
     }
@@ -63,15 +49,22 @@ const TowerDetails = () => {
             <span className="font-medium text-slate-700">
               {applyFormatting(key)}:
             </span>
-            <div className="ml-2 text-slate-600">{renderRecursive(value)}</div>
+            <div className="ml-2 text-slate-600">
+              {renderRecursive(value, key)}
+            </div>
           </div>
         ))}
       </div>
     );
   };
 
-  if (loading) return <div className="p-6">Loading twin data…</div>;
-  if (error) return <div className="p-6 text-red-500">{error}</div>;
+  if (isLoading) return <div className="p-6">Loading twin data…</div>;
+  if (error instanceof Error)
+    return <div className="p-6 text-red-500">{error.message}</div>;
+
+  if (!twinData) {
+    return <div className="p-6">No twin data found.</div>;
+  }
 
   const { thingId, attributes = {}, features = {} } = twinData;
 
@@ -169,3 +162,22 @@ const TowerDetails = () => {
 };
 
 export default TowerDetails;
+
+// const [twinData, setTwinData] = useState<any>(null);
+// const [loading, setLoading] = useState(true);
+// const [error, setError] = useState<string | null>(null);
+
+// useEffect(() => {
+//   const fetchTwin = async () => {
+//     try {
+//       const data = await getTwinById(towerName);
+//       setTwinData(data);
+//     } catch (err: any) {
+//       setError(err.message);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   fetchTwin();
+// }, [towerName]);

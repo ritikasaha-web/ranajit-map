@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface FeatureEditProps {
   data?: any;
@@ -11,6 +12,7 @@ const FeatureEdit: React.FC<FeatureEditProps> = ({ data = {}, thingId }) => {
   const [localData, setLocalData] = useState<any>(data);
   const [draftData, setDraftData] = useState<any>(data);
   const [isEditing, setIsEditing] = useState(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     setLocalData(data);
@@ -94,6 +96,10 @@ const FeatureEdit: React.FC<FeatureEditProps> = ({ data = {}, thingId }) => {
 
       setLocalData(draftData);
       setIsEditing(false);
+      queryClient.invalidateQueries({
+        queryKey: ["towers", thingId],
+      });
+
       toast.promise<{ name: string }>(
         () =>
           new Promise((resolve) =>

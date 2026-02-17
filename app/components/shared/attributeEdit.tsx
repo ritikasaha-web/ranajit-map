@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface AttributeEditProps {
   data: Record<string, any>;
@@ -11,6 +12,7 @@ const AttributeEdit: React.FC<AttributeEditProps> = ({ data, thingId }) => {
   const [localData, setLocalData] = useState<Record<string, any>>(data);
   const [isEditing, setIsEditing] = useState(false);
   const [draftData, setDraftData] = useState<Record<string, any>>(data);
+  const queryClient = useQueryClient();
 
   const handleEdit = () => {
     setDraftData(localData);
@@ -39,6 +41,9 @@ const AttributeEdit: React.FC<AttributeEditProps> = ({ data, thingId }) => {
 
       setLocalData(draftData);
       setIsEditing(false);
+      queryClient.invalidateQueries({
+        queryKey: ["towers", thingId],
+      });
       toast.promise<{ name: string }>(
         () =>
           new Promise((resolve) =>

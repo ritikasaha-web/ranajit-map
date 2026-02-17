@@ -69,11 +69,15 @@ const twinOverview = () => {
                     {applyFormatting(key)}:
                   </span>
                   <span className="text-slate-700">
-                    {upperCaseSet.has(key.toLowerCase())
-                      ? String(value)
-                      : typeof value === "string"
-                        ? applyFormatting(value)
-                        : String(value)}
+                    <span className="text-slate-700">
+                      {key.toLowerCase() === "model"
+                        ? String(value).toUpperCase()
+                        : upperCaseSet.has(key.toLowerCase())
+                          ? String(value)
+                          : typeof value === "string"
+                            ? applyFormatting(value)
+                            : String(value)}
+                    </span>
                   </span>
                 </div>
               ) : (

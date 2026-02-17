@@ -15,7 +15,7 @@ export const useTowers = () =>
 export const useTower = (id?: string | null) => {
   const queryClient = useQueryClient();
 
-  return useQuery({
+  return useQuery<any, Error>({
     queryKey: id ? TOWER_KEYS.detail(id) : [],
     queryFn: () => getTwinById(id as string),
     enabled: !!id,
