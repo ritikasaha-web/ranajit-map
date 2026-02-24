@@ -22,7 +22,9 @@ const AttributeEdit: React.FC<AttributeEditProps> = ({ data, thingId }) => {
   const handleSave = async () => {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/2/things/${thingId}/attributes`,
+        // `http://localhost:8080/api/2/things/${thingId}/attributes`,
+        `/api/2/things/${thingId}/attributes`,
+
         {
           method: "PATCH",
           headers: {

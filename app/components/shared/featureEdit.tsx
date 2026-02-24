@@ -77,7 +77,9 @@ const FeatureEdit: React.FC<FeatureEditProps> = ({ data = {}, thingId }) => {
   const handleSave = async () => {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/2/things/${thingId}/features`,
+        // `http://localhost:8080/api/2/things/${thingId}/features`,
+        `/api/2/things/${thingId}/features`,
+
         {
           method: "PATCH",
           headers: {
