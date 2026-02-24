@@ -1,11 +1,24 @@
 import type { NextConfig } from "next";
-const path = require("path");
+import path from "path";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-   turbopack: {},
+  turbopack: {},
+
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: "http://138.201.137.244:5500/api/:path*",
+      },
+    ];
+  },
+
   webpack: (config) => {
-    config.resolve.alias["cesium"] = path.resolve(__dirname, "node_modules/cesium");
+    config.resolve.alias["cesium"] = path.resolve(
+      __dirname,
+      "node_modules/cesium",
+    );
+
     config.resolve.fallback = {
       fs: false,
       path: false,
