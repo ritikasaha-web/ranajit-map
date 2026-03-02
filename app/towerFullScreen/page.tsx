@@ -35,13 +35,13 @@ const page = () => {
         <div className="w-1/2 bg-white rounded-3xl">
           <div className="relative w-full h-[500px] rounded-3xl ">
             <img
-              src="/GBT.png"
+              src="/GBT.webp"
               alt="GBT"
               className="absolute inset-0 w-full h-full object-contain pointer-events-none"
             />
 
             <img
-              src="/four_pole/four_pole.png"
+              src="/four_pole/four_pole.webp"
               alt="Four Pole"
               className="absolute inset-0 w-full h-full object-contain pointer-events-none"
             />
@@ -49,7 +49,7 @@ const page = () => {
             {towerItems.map((item) => (
               <img
                 key={item}
-                src={`/four_pole/${item}.png`}
+                src={`/four_pole/${item}.webp`}
                 alt={item}
                 className="absolute inset-0 w-full h-full object-contain pointer-events-none"
               />

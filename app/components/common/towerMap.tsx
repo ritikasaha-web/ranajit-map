@@ -60,7 +60,7 @@ const TowerMap = () => {
     (async () => {
       try {
         const data = await getTwins();
-        console.log("Fetched towers:", data);
+        // console.log("Fetched towers:", data);
         setTowers(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Error fetching towers:", err);

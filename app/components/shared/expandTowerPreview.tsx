@@ -59,7 +59,7 @@ const ExpandTowerPreview = () => {
   );
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <button
         onClick={() => setExpandState(false)}
         className="absolute top-5 right-5 rounded-full p-2 bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 transition"
@@ -71,7 +71,7 @@ const ExpandTowerPreview = () => {
 
         {/* LEFT : Tower Visual */}
         <div
-          className="relative w-full h-[500px] bg-white rounded-xl overflow-hidden border border-slate-300"
+          className="relative w-full h-[470px] bg-white rounded-xl overflow-hidden border border-slate-300"
           onMouseEnter={() => setZoom(true)}
           onMouseLeave={() => setZoom(false)}
           onMouseMove={(e) => {
@@ -90,14 +90,14 @@ const ExpandTowerPreview = () => {
           >
             {/* Base */}
             <img
-              src={`/${baseTypes[currTower?.attributes?.installation_type]}.png`}
+              src={`/${baseTypes[currTower?.attributes?.installation_type]}.webp`}
               alt="Installation"
               className="absolute inset-0 w-full h-full object-contain pointer-events-none"
             />
 
             {/* Structure */}
             <img
-              src={`/${currTower?.attributes?.structure_type}/${currTower?.attributes?.structure_type}.png`}
+              src={`/${currTower?.attributes?.structure_type}/${currTower?.attributes?.structure_type}.webp`}
               alt="Structure"
               className="absolute inset-0 w-full h-full object-contain pointer-events-none"
             />
@@ -105,21 +105,17 @@ const ExpandTowerPreview = () => {
             {/* Components */}
             {Object.keys(orderedTowerItems)
               .filter((item) => shouldRenderComponent(item))
-              .map(
-                (item) => (
-                  console.log(item),
-                  (
-                    <img
-                      key={item}
-                      src={`/${currTower?.attributes?.structure_type}/${
-                        item === "cable" ? `${item}_${towerItems[item]}` : item
-                      }.png`}
-                      alt={item}
-                      className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-                    />
-                  )
-                ),
-              )}
+              .map((item) => (
+                // console.log(item),
+                <img
+                  key={item}
+                  src={`/${currTower?.attributes?.structure_type}/${
+                    item === "cable" ? `${item}_${towerItems[item]}` : item
+                  }.webp`}
+                  alt={item}
+                  className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+                />
+              ))}
           </div>
         </div>
 

@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import TwinOverview from "../twinOverview";
+import SearchTower from "../shared/searchTower";
 import dynamic from "next/dynamic";
 
 const TowerMap = dynamic(() => import("./towerMap"), {
@@ -9,6 +10,7 @@ const TowerMap = dynamic(() => import("./towerMap"), {
 const TowerView = () => {
   return (
     <div className="flex">
+      <SearchTower />
       <TowerMap />
       <TwinOverview />
     </div>

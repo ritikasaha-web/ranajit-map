@@ -17,7 +17,7 @@ const TowerComponents = ({ features }: { features: any }) => {
           const type = featureData?.properties?.type
             ? featureData?.properties?.type
             : featureName.toLowerCase();
-          console.log("Type:", type);
+          // console.log("Type:", type);
           if (!type) return null;
 
           // Example: `/components/${type}.png`

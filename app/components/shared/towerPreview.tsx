@@ -21,8 +21,8 @@ const TowerPreview = ({
   structureType,
   installationType,
 }: TowerPreviewProps) => {
-  const installation_type = `/${baseTypes[installationType]}.png`;
-  const structure: string = `/${structureType}/${structureType}.png`;
+  const installation_type = `/${baseTypes[installationType]}.webp`;
+  const structure: string = `/${structureType}/${structureType}.webp`;
 
   const componentSetMap: Record<string, Set<string>> = {
     monopole: monopoleComponentSet,
@@ -45,9 +45,9 @@ const TowerPreview = ({
     if (typeof value === "number" && value < 0) return;
 
     if (key === "cable" && typeof value !== "number") {
-      layeredimgs.push(`/${structureType}/cable_${value}.png`);
+      layeredimgs.push(`/${structureType}/cable_${value}.webp`);
     } else {
-      layeredimgs.push(`/${structureType}/${key}.png`);
+      layeredimgs.push(`/${structureType}/${key}.webp`);
     }
   });
 
