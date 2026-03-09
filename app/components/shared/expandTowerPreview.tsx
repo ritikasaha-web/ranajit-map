@@ -22,6 +22,18 @@ const componentSetMap: Record<string, Set<string>> = {
 const ExpandTowerPreview = () => {
   const { data: currTower } = useTower(useTowerStore((s) => s.selectedTowerId));
   const towerItems = currTower?.features?.components?.properties || {};
+  const downtime = currTower?.attributes?.down_time ?? 0;
+
+  let downtimeLabel = "OK";
+  let downtimeColor = "text-green-600 bg-green-50 border-green-200";
+
+  if (downtime > 20) {
+    downtimeLabel = "Severe";
+    downtimeColor = "text-red-600 bg-red-50 border-red-200";
+  } else if (downtime > 0) {
+    downtimeLabel = "Down";
+    downtimeColor = "text-orange-600 bg-orange-50 border-orange-200";
+  }
 
   const orderedTowerItems = Object.fromEntries(
     [
@@ -145,6 +157,17 @@ const ExpandTowerPreview = () => {
                   ?.replace(/_/g, " ")
                   .toLowerCase()
                   .replace(/\b\w/g, (c: string) => c.toUpperCase())}
+              </span>
+            </div>
+
+            {/* Tower Downtime Status */}
+            <div
+              className={`mt-3 flex items-center justify-between rounded-md border px-3 py-1.5 text-xs ${downtimeColor}`}
+            >
+              <span className="font-medium text-slate-700">Tower Status</span>
+
+              <span className="font-semibold">
+                {downtimeLabel} ({downtime} min)
               </span>
             </div>
           </div>

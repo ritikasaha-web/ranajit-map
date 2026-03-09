@@ -10,7 +10,7 @@ const TowerMap = dynamic(() => import("./towerMap"), {
 const TowerView = () => {
   return (
     <div className="flex">
-      <SearchTower />
+      {/* <SearchTower /> */}
       <TowerMap />
       <TwinOverview />
     </div>

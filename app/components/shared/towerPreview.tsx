@@ -14,12 +14,14 @@ interface TowerPreviewProps {
   structureType: string;
   installationType: string;
   components: Record<string, any>;
+  down_time: number;
 }
 
 const TowerPreview = ({
   components,
   structureType,
   installationType,
+  down_time,
 }: TowerPreviewProps) => {
   const installation_type = `/${baseTypes[installationType]}.webp`;
   const structure: string = `/${structureType}/${structureType}.webp`;
@@ -54,6 +56,18 @@ const TowerPreview = ({
   const setExpandState = useExpandTowerStore(
     (state) => state.setOpenExpandTower,
   );
+  /* Dummy down_time value (minutes) */
+
+  let downtimeLabel = "OK";
+  let downtimeColor = "text-green-600 bg-green-50 border-green-200";
+
+  if (down_time > 20) {
+    downtimeLabel = "Severe";
+    downtimeColor = "text-red-600 bg-red-50 border-red-200";
+  } else if (down_time > 0) {
+    downtimeLabel = "Down (Increasing)";
+    downtimeColor = "text-orange-600 bg-orange-50 border-orange-200";
+  }
 
   return (
     <div className="w-full h-full bg-white rounded-lg p-2 flex flex-col gap-3">
@@ -78,6 +92,15 @@ const TowerPreview = ({
 
       {/* Details Section */}
       <div className="flex-1 overflow-y-auto text-xs">
+        {/* Tower Status */}
+        <div
+          className={`mb-3 px-3 py-2 rounded-md border flex items-center justify-between text-xs ${downtimeColor}`}
+        >
+          <span className="font-semibold text-slate-700">Tower Status</span>
+          <span className="font-semibold">
+            {downtimeLabel} ({down_time} min)
+          </span>
+        </div>
         <h2 className="text-sm font-semibold text-slate-800 mb-2">
           Tower Details
         </h2>

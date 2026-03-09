@@ -6,7 +6,7 @@ import "leaflet/dist/leaflet.css";
 import { getTwinById, getTwins } from "../../api/endpoints";
 import TowerPreview from "../shared/towerPreview";
 import { useTowerStore } from "@/app/store/useTowerStore";
-import { useTower } from "@/app/hooks/getTowers";
+import { useTower, useTowers } from "@/app/hooks/getTowers";
 
 const smallIcon = L.icon({
   iconUrl: "/images/tower_icon.png",
@@ -82,6 +82,12 @@ const TowerMap = () => {
   const selectedTowerId = useTowerStore((s) => s.selectedTowerId);
   const setSelectedTowerId = useTowerStore((s) => s.setSelectedTowerId);
   const { data: selectedTower } = useTower(selectedTowerId ?? undefined);
+  const icon_url = (down_time: number) => {
+    if (down_time == 0) return "/images/tower_icon_green.png";
+    else if (down_time > 0 && down_time < 20)
+      return "/images/tower_icon_orange.png";
+    return "/images/tower_icon_red.png";
+  };
 
   return (
     <div className="w-[70%] h-screen">
@@ -117,7 +123,7 @@ const TowerMap = () => {
               zoom >= 18
                 ? bigIcon
                 : L.icon({
-                    iconUrl: "/images/tower_icon.png",
+                    iconUrl: icon_url(tower.attributes.down_time),
                     iconSize: [
                       tower.attributes.height_m / 3,
                       tower.attributes.height_m / 2,
@@ -144,6 +150,7 @@ const TowerMap = () => {
                       selectedTower.attributes.installation_type
                     }
                     components={selectedTower.features.components.properties}
+                    down_time={selectedTower.attributes.down_time}
                   />
                 )}
               </div>
