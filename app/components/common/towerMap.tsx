@@ -150,6 +150,7 @@ const TowerMap = () => {
                       selectedTower.attributes.installation_type
                     }
                     components={selectedTower.features.components.properties}
+                    uptime={selectedTower.attributes.uptime}
                     down_time={selectedTower.attributes.down_time}
                   />
                 )}

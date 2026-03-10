@@ -23,6 +23,7 @@ const ExpandTowerPreview = () => {
   const { data: currTower } = useTower(useTowerStore((s) => s.selectedTowerId));
   const towerItems = currTower?.features?.components?.properties || {};
   const downtime = currTower?.attributes?.down_time ?? 0;
+  const uptime = currTower?.attributes?.uptime ?? 0;
 
   let downtimeLabel = "OK";
   let downtimeColor = "text-green-600 bg-green-50 border-green-200";
@@ -69,6 +70,13 @@ const ExpandTowerPreview = () => {
   const setExpandState = useExpandTowerStore(
     (state) => state.setOpenExpandTower,
   );
+  const formatDuration = (minutes: number): string => {
+    const totalSeconds = minutes * 60;
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  };
 
   return (
     <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -160,15 +168,21 @@ const ExpandTowerPreview = () => {
               </span>
             </div>
 
-            {/* Tower Downtime Status */}
+            {/* Tower Status */}
             <div
               className={`mt-3 flex items-center justify-between rounded-md border px-3 py-1.5 text-xs ${downtimeColor}`}
             >
               <span className="font-medium text-slate-700">Tower Status</span>
-
-              <span className="font-semibold">
-                {downtimeLabel} ({downtime} min)
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="font-semibold">
+                  ↑ {formatDuration(uptime)}
+                </span>
+                <span className="text-slate-400">|</span>
+                <span className="font-semibold">
+                  ↓ {downtime === 0 ? "No Downtime" : formatDuration(downtime)}
+                </span>
+                <span className="font-semibold">— {downtimeLabel}</span>
+              </div>
             </div>
           </div>
 

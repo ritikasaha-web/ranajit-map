@@ -14,6 +14,7 @@ interface TowerPreviewProps {
   structureType: string;
   installationType: string;
   components: Record<string, any>;
+  uptime: number;
   down_time: number;
 }
 
@@ -22,6 +23,7 @@ const TowerPreview = ({
   structureType,
   installationType,
   down_time,
+  uptime,
 }: TowerPreviewProps) => {
   const installation_type = `/${baseTypes[installationType]}.webp`;
   const structure: string = `/${structureType}/${structureType}.webp`;
@@ -68,6 +70,13 @@ const TowerPreview = ({
     downtimeLabel = "Down (Increasing)";
     downtimeColor = "text-orange-600 bg-orange-50 border-orange-200";
   }
+  const formatDuration = (minutes: number): string => {
+    const totalSeconds = minutes * 60;
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  };
 
   return (
     <div className="w-full h-full bg-white rounded-lg p-2 flex flex-col gap-3">
@@ -91,20 +100,26 @@ const TowerPreview = ({
       </div>
 
       {/* Details Section */}
-      <div className="flex-1 overflow-y-auto text-xs">
-        {/* Tower Status */}
-        <div
-          className={`mb-3 px-3 py-2 rounded-md border flex items-center justify-between text-xs ${downtimeColor}`}
-        >
-          <span className="font-semibold text-slate-700">Tower Status</span>
+      {/* Tower Status - fixed, does not scroll */}
+      <div
+        className={`px-3 py-1.5 rounded-md border flex items-center justify-between text-xs ${downtimeColor}`}
+      >
+        <span className="font-semibold text-slate-700">Tower Status</span>
+        <div className="flex items-center gap-3">
+          <span className="font-semibold">↑ {formatDuration(uptime)}</span>
+          <span className="text-slate-400">|</span>
           <span className="font-semibold">
-            {downtimeLabel} ({down_time} min)
+            ↓ {down_time === 0 ? "No Downtime" : formatDuration(down_time)}
           </span>
+          <span className="font-semibold">— {downtimeLabel}</span>
         </div>
+      </div>
+
+      {/* Details Section */}
+      <div className="flex-1 overflow-y-auto text-xs">
         <h2 className="text-sm font-semibold text-slate-800 mb-2">
           Tower Details
         </h2>
-
         <div className="space-y-1">
           {[...towerComponents]
             .filter((key) => {
