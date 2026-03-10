@@ -1,12 +1,20 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  Tooltip,
+  useMap,
+} from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { getTwinById, getTwins } from "../../api/endpoints";
 import TowerPreview from "../shared/towerPreview";
 import { useTowerStore } from "@/app/store/useTowerStore";
 import { useTower, useTowers } from "@/app/hooks/getTowers";
+import TowerTooltip from "@/app/components/shared/TowerTooltip";
 
 const smallIcon = L.icon({
   iconUrl: "/images/tower_icon.png",
@@ -136,6 +144,18 @@ const TowerMap = () => {
               click: () => setSelectedTowerId(tower.thingId),
             }}
           >
+            <Tooltip
+              direction="top"
+              offset={[0, -50]}
+              opacity={1}
+              className="tower-tooltip-override"
+            >
+              <TowerTooltip
+                thingId={tower.thingId}
+                down_time={tower.attributes.down_time}
+                uptime={tower.attributes.uptime}
+              />
+            </Tooltip>
             <Popup className="w-[450px] h-[450px]">
               <strong>{tower.thingId}</strong>
               <div className="w-[420px] h-[450px] overflow-auto">
