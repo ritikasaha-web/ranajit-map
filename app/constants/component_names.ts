@@ -122,6 +122,7 @@ export const upperCaseSet: Set<string> = new Set([
   "ipms",
   "rms",
   "gbm",
+  "dg",
 ]);
 export const lowerCaseSet: Set<string> = new Set([
   "(mm)",
