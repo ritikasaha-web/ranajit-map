@@ -8,7 +8,11 @@ import {
   formatLabel,
 } from "@/app/constants/component_names";
 import { BsFullscreen } from "react-icons/bs";
-import { useExpandTowerStore } from "@/app/store/useTowerStore";
+import {
+  useExpandTowerStore,
+  useSitePhotosStore,
+} from "@/app/store/useTowerStore";
+import { GrGallery } from "react-icons/gr";
 
 interface TowerPreviewProps {
   structureType: string;
@@ -58,6 +62,8 @@ const TowerPreview = ({
   const setExpandState = useExpandTowerStore(
     (state) => state.setOpenExpandTower,
   );
+  const setSitePhotosOpen = useSitePhotosStore((s) => s.setSitePhotosOpen);
+
   /* Dummy down_time value (minutes) */
 
   let downtimeLabel = "OK";
@@ -82,12 +88,31 @@ const TowerPreview = ({
     <div className="w-full h-full bg-white rounded-lg p-2 flex flex-col gap-3">
       {/* img Section */}
       <div className="relative w-full h-[320px] bg-white rounded-md border border-slate-300 overflow-hidden flex items-center justify-center">
-        <button
-          onClick={() => setExpandState(true)}
-          className="absolute top-2 right-2 z-10 rounded-full p-1.5 bg-transparent duration-200 border border-slate-300 text-slate-600 hover:bg-slate-100"
-        >
-          <BsFullscreen size={16} />
-        </button>
+        {/* Expand View */}
+        <div className="group absolute top-2 right-2 z-10">
+          <button
+            onClick={() => setExpandState(true)}
+            className="cursor-pointer rounded-full p-1.5 bg-transparent duration-200 border border-slate-300 text-slate-600 hover:bg-slate-100"
+          >
+            <BsFullscreen size={16} />
+          </button>
+          <span className="pointer-events-none absolute right-full mr-2 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-800 text-white text-[10px] font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+            Expand View
+          </span>
+        </div>
+
+        {/* Site Photos */}
+        <div className="group absolute top-10 right-2 z-10">
+          <button
+            onClick={() => setSitePhotosOpen(true)}
+            className="cursor-pointer rounded-full p-1.5 bg-transparent duration-200 border border-slate-300 text-slate-600 hover:bg-slate-100"
+          >
+            <GrGallery size={16} />
+          </button>
+          <span className="pointer-events-none absolute right-full mr-2 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-800 text-white text-[10px] font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+            Site Photos
+          </span>
+        </div>
 
         {layeredimgs.map((src, index) => (
           <img

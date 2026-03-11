@@ -9,6 +9,11 @@ type ExpandTowerStore = {
   setOpenExpandTower: (value: boolean) => void;
 };
 
+interface SitePhotosStore {
+  isSitePhotosOpen: boolean;
+  setSitePhotosOpen: (val: boolean) => void;
+}
+
 export const useTowerStore = create<TowerStore>((set) => ({
   selectedTowerId: null,
   setSelectedTowerId: (id) => set({ selectedTowerId: id }),
@@ -16,4 +21,9 @@ export const useTowerStore = create<TowerStore>((set) => ({
 export const useExpandTowerStore = create<ExpandTowerStore>((set) => ({
   openExpandTower: false,
   setOpenExpandTower: (value) => set({ openExpandTower: value }),
+}));
+
+export const useSitePhotosStore = create<SitePhotosStore>((set) => ({
+  isSitePhotosOpen: false,
+  setSitePhotosOpen: (val) => set({ isSitePhotosOpen: val }),
 }));

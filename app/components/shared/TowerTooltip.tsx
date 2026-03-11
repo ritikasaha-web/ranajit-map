@@ -31,7 +31,7 @@ const TowerTooltip = ({
       bb_hours:
         bb_hours ?? parseFloat((Math.random() * (6 - 3) + 3).toFixed(1)),
       eb_sanction_load: eb_sanction_load ?? Math.floor(Math.random() * 26) + 5,
-      id_od: id_od ?? (Math.random() > 0.5 ? "IN / OUT" : "OUT / IN"),
+      id_od: id_od ?? (Math.random() > 0.5 ? "ID" : "OD"),
       dg: dg ?? ["Running", "Standby", "Off"][Math.floor(Math.random() * 3)],
     }),
     [thingId],

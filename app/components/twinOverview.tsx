@@ -1,3 +1,4 @@
+"use client";
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -9,11 +10,41 @@ import {
 } from "@/app/constants/component_names";
 import { useTower } from "../hooks/getTowers";
 import { useTowerStore } from "../store/useTowerStore";
+import { IoChevronDown } from "react-icons/io5";
+
+/* ── Simple accordion used only in features ── */
+const Accordion = ({
+  label,
+  children,
+  defaultOpen = false,
+}: {
+  label: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) => {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border border-sky-200 rounded-md mb-2 overflow-hidden">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between px-3 py-2 bg-sky-50 hover:bg-sky-100 transition-colors text-left"
+      >
+        <span className="font-medium text-sky-700 text-sm">
+          {applyFormatting(label)}
+        </span>
+        <IoChevronDown
+          size={14}
+          className={`text-sky-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && <div className="px-3 py-2 bg-white">{children}</div>}
+    </div>
+  );
+};
 
 const twinOverview = () => {
   const router = useRouter();
   const selectedTowerId = useTowerStore((s) => s.selectedTowerId);
-
   const { data: selectedTower } = useTower(selectedTowerId ?? undefined);
 
   if (!selectedTower) {
@@ -26,12 +57,12 @@ const twinOverview = () => {
 
   const { thingId, attributes = {}, features = {} } = selectedTower;
 
+  /* ── Original recursive renderer — completely unchanged ── */
   const renderRecursive = (data: any) => {
     if (data === null || data === undefined) {
       return <span className="text-slate-400">—</span>;
     }
 
-    // Primitive
     if (typeof data !== "object") {
       return (
         <span className="text-slate-700">
@@ -40,7 +71,6 @@ const twinOverview = () => {
       );
     }
 
-    // Array
     if (Array.isArray(data)) {
       return (
         <div className="ml-4 space-y-1">
@@ -53,7 +83,6 @@ const twinOverview = () => {
       );
     }
 
-    // Object (THIS is the important part)
     return (
       <div className="ml-2 space-y-2">
         {Object.entries(data).map(([key, value]) => {
@@ -62,32 +91,26 @@ const twinOverview = () => {
 
           return (
             <div key={key}>
-              {/* Label + primitive inline */}
               {isPrimitive ? (
                 <div className="flex gap-2">
                   <span className="font-medium text-slate-800">
                     {applyFormatting(key)}:
                   </span>
                   <span className="text-slate-700">
-                    <span className="text-slate-700">
-                      {key.toLowerCase() === "model"
-                        ? String(value).toUpperCase()
-                        : upperCaseSet.has(key.toLowerCase())
-                          ? String(value)
-                          : typeof value === "string"
-                            ? applyFormatting(value)
-                            : String(value)}
-                    </span>
+                    {key.toLowerCase() === "model"
+                      ? String(value).toUpperCase()
+                      : upperCaseSet.has(key.toLowerCase())
+                        ? String(value)
+                        : typeof value === "string"
+                          ? applyFormatting(value)
+                          : String(value)}
                   </span>
                 </div>
               ) : (
                 <>
-                  {/* Label */}
                   <div className="font-medium text-slate-800">
                     {applyFormatting(key)}:
                   </div>
-
-                  {/* Nested content */}
                   <div className="ml-4 mt-1 border-l border-sky-300 pl-3">
                     {renderRecursive(value)}
                   </div>
@@ -100,25 +123,52 @@ const twinOverview = () => {
     );
   };
 
+  /* ── Features with 2-level accordion ──────────────────────────
+     Level 1 : each feature key  (e.g. "components", "component_details")
+     Level 2 : each key inside .properties that is itself an object
+               (e.g. "equipment_shelter" inside "component_details")
+     Below L2: renderRecursive takes over — same behaviour as before
+  ─────────────────────────────────────────────────────────────── */
   const renderFeatures = (featuresObj: any) => {
     return (
-      <div className="mt-3 space-y-4">
-        {Object.entries(featuresObj).map(([featureName, featureData]: any) => (
-          <div
-            key={featureName}
-            className="rounded-lg border border-sky-300 bg-sky-100/50 p-3"
-          >
-            <h3 className="font-semibold text-sky-700 mb-2">
-              {applyFormatting(featureName)}
-            </h3>
+      <div className="mt-3 space-y-1">
+        {Object.entries(featuresObj).map(([featureName, featureData]: any) => {
+          // support both { properties: {...} } and flat objects
+          const properties = featureData?.properties ?? featureData;
 
-            {featureData?.properties ? (
-              renderRecursive(featureData.properties)
-            ) : (
-              <p className="text-xs text-slate-500 italic">No properties</p>
-            )}
-          </div>
-        ))}
+          return (
+            <Accordion key={featureName} label={featureName} defaultOpen={true}>
+              {properties && typeof properties === "object" ? (
+                Object.entries(properties).map(([propKey, propValue]) => {
+                  const isNestedObject =
+                    propValue !== null &&
+                    propValue !== undefined &&
+                    typeof propValue === "object" &&
+                    !Array.isArray(propValue);
+
+                  return isNestedObject ? (
+                    // Level 2 accordion for nested objects
+                    <Accordion key={propKey} label={propKey}>
+                      {renderRecursive(propValue)}
+                    </Accordion>
+                  ) : (
+                    // Primitive / array — original inline style
+                    <div key={propKey} className="flex gap-2 py-0.5">
+                      <span className="font-medium text-slate-800 text-sm">
+                        {applyFormatting(propKey)}:
+                      </span>
+                      <span className="text-slate-700 text-sm">
+                        {renderRecursive(propValue)}
+                      </span>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-xs text-slate-500 italic">No properties</p>
+              )}
+            </Accordion>
+          );
+        })}
       </div>
     );
   };
@@ -146,7 +196,7 @@ const twinOverview = () => {
         {renderFeatures(features)}
       </div>
 
-      {/* Footer */}
+      {/* Footer — unchanged */}
       <div className="h-[10%] flex items-center justify-center gap-3 bg-white/90">
         <Button
           className="rounded-full bg-sky-600 text-white hover:bg-sky-700 cursor-pointer"
@@ -156,7 +206,7 @@ const twinOverview = () => {
         </Button>
 
         <Button
-          className={`rounded-full border cursor-pointer border-sky-300 text-slate-700 bg-white hover:bg-sky-50`}
+          className="rounded-full border cursor-pointer border-sky-300 text-slate-700 bg-white hover:bg-sky-50"
           onClick={() =>
             window.open(
               `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${attributes.location?.lat},${attributes.location?.lng}`,
