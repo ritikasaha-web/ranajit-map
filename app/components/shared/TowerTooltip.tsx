@@ -49,6 +49,7 @@ const TowerTooltip = ({
       style={{
         width: "230px",
         background: "#ffffff",
+        whiteSpace: "normal",
         minWidth: "230px", // 👈 add this
         borderRadius: "10px",
         overflow: "hidden",
@@ -87,6 +88,7 @@ const TowerTooltip = ({
             alignItems: "center",
             justifyContent: "space-between",
             gap: "8px",
+            overflow: "hidden",
           }}
         >
           <p
@@ -97,6 +99,8 @@ const TowerTooltip = ({
               letterSpacing: "-0.01em",
               wordBreak: "break-all",
               flex: 1,
+              whiteSpace: "normal", // 👈 override Leaflet's nowrap
+              minWidth: 0,
             }}
           >
             {thingId}

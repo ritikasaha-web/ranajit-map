@@ -121,3 +121,17 @@ body {
     background-color: #0000007c;
   }
 }
+.tower-tooltip-override {
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  white-space: normal !important;
+  max-width: none !important;
+}
+
+.tower-tooltip-override::before {
+  display: none !important;
+}

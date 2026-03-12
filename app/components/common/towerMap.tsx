@@ -15,6 +15,7 @@ import TowerPreview from "../shared/towerPreview";
 import { useTowerStore } from "@/app/store/useTowerStore";
 import { useTower, useTowers } from "@/app/hooks/getTowers";
 import TowerTooltip from "@/app/components/shared/TowerTooltip";
+import MapLegend from "../shared/mapLegend";
 
 const smallIcon = L.icon({
   iconUrl: "/images/tower_icon.png",
@@ -179,6 +180,7 @@ const TowerMap = () => {
           </Marker>
         ))}
       </MapContainer>
+      <MapLegend />
     </div>
   );
 };
