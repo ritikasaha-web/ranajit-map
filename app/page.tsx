@@ -1,10 +1,10 @@
 "use client";
 import "./globals.css";
-import ExpandTowerPreview from "./components/shared/expandTowerPreview";
+import ExpandTowerPreview from "./components/common/expandTowerPreview";
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { useExpandTowerStore, useSitePhotosStore } from "./store/useTowerStore";
-import SitePhotos from "./components/shared/SitePhotos";
+import SitePhotos from "./components/common/SitePhotos";
 
 const TowerView = dynamic(() => import("./components/common/towerView"), {
   ssr: false,

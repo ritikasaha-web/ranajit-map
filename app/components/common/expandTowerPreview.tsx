@@ -11,6 +11,11 @@ import {
 } from "@/app/constants/component_names";
 import { useTower } from "@/app/hooks/getTowers";
 import { useTowerStore, useExpandTowerStore } from "@/app/store/useTowerStore";
+import {
+  anchorMap,
+  labelOverrides,
+  ComponentLabels,
+} from "../shared/componentLabels";
 
 const componentSetMap: Record<string, Set<string>> = {
   monopole: monopoleComponentSet,
@@ -36,7 +41,11 @@ const ExpandTowerPreview = () => {
   const isOnline = downtime === 0;
   const isSevere = downtime > 20;
 
-  const statusLabel = isOnline ? "OK" : isSevere ? "Severe" : "Down";
+  const statusLabel = isOnline
+    ? "Online"
+    : isSevere
+      ? "Down"
+      : "Running at Risk";
   const statusDot = isOnline
     ? "bg-green-400"
     : isSevere
@@ -170,6 +179,24 @@ const ExpandTowerPreview = () => {
                     className="absolute inset-0 w-full h-full object-contain pointer-events-none"
                   />
                 ))}
+              {/* <ComponentLabels
+                entries={Object.keys(orderedTowerItems)
+                  .filter((key) => shouldRenderComponent(key))
+                  .map((key) => ({
+                    id: key,
+                    value: towerItems[key],
+                    anchor: (anchorMap[currTower?.attributes?.structure_type] ??
+                      anchorMap.monopole)[key] ?? { x: 80, y: 50 },
+                    side:
+                      ((anchorMap[currTower?.attributes?.structure_type] ??
+                        anchorMap.monopole)[key]?.x ?? 80) >= 50
+                        ? "right"
+                        : "left",
+                  }))}
+                overrides={
+                  labelOverrides[currTower?.attributes?.structure_type] ?? {}
+                }
+              /> */}
             </div>
           </div>
 

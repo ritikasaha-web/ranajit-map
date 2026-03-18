@@ -39,7 +39,11 @@ const TowerTooltip = ({
   const isOnline = down_time === 0;
   const isSevere = down_time > 20;
 
-  const statusLabel = isOnline ? "Online" : isSevere ? "Severe" : "Degraded";
+  const statusLabel = isOnline
+    ? "Online"
+    : isSevere
+      ? "Down"
+      : "Running at Risk";
   const statusColor = isOnline ? "#16a34a" : isSevere ? "#dc2626" : "#ea580c";
   const statusBg = isOnline ? "#f0fdf4" : isSevere ? "#fef2f2" : "#fff7ed";
   const statusBorder = isOnline ? "#bbf7d0" : isSevere ? "#fecaca" : "#fed7aa";

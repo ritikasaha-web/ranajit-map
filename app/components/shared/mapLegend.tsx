@@ -8,13 +8,13 @@ const MapLegend = () => {
     },
     {
       icon: "/images/tower_icon_orange.png",
-      label: "Degraded",
+      label: "Running at Risk",
       sub: "< 20 min down",
       color: "#ea580c",
     },
     {
       icon: "/images/tower_icon_red.png",
-      label: "Severe",
+      label: "Down",
       sub: "> 20 min down",
       color: "#dc2626",
     },

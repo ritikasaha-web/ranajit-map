@@ -24,7 +24,6 @@ export const monopoleComponentSet: Set<string> = new Set([
   "fuel_tank",
   "lightning_rod",
   "microwave",
-  "monopole",
   "power_cabinate",
   "rf_jumpers",
   "rrh",
