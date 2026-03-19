@@ -179,7 +179,7 @@ const ExpandTowerPreview = () => {
                     className="absolute inset-0 w-full h-full object-contain pointer-events-none"
                   />
                 ))}
-              {/* <ComponentLabels
+              <ComponentLabels
                 entries={Object.keys(orderedTowerItems)
                   .filter((key) => shouldRenderComponent(key))
                   .map((key) => ({
@@ -196,7 +196,7 @@ const ExpandTowerPreview = () => {
                 overrides={
                   labelOverrides[currTower?.attributes?.structure_type] ?? {}
                 }
-              /> */}
+              />
             </div>
           </div>
 

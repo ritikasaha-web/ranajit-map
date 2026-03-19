@@ -69,8 +69,13 @@ const TowerMap = () => {
     (async () => {
       try {
         const data = await getTwins();
-        // console.log("Fetched towers:", data);
-        setTowers(Array.isArray(data) ? data : []);
+        const seen = new Set();
+        const unique = (Array.isArray(data) ? data : []).filter((t: any) => {
+          if (seen.has(t.thingId)) return false;
+          seen.add(t.thingId);
+          return true;
+        });
+        setTowers(unique); // ✅ only this
       } catch (err) {
         console.error("Error fetching towers:", err);
         setTowers([]);

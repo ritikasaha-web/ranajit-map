@@ -1,6 +1,7 @@
 "use client";
-import { formatLabel } from "@/app/constants/component_names";
+import { applyFormatting, formatLabel } from "@/app/constants/component_names";
 import { useEffect, useRef, useState } from "react";
+import { BsFuelPumpDiesel } from "react-icons/bs";
 
 //controls where the line from component to label anchor points are (as % of container)
 export const anchorMap: Record<
@@ -40,15 +41,21 @@ export const anchorMap: Record<
     power_cabinate: { x: 56, y: 79 },
   },
   tripole: {
-    antenna: { x: 78, y: 14 },
-    rrh: { x: 78, y: 26 },
-    tma: { x: 78, y: 36 },
-    cable: { x: 22, y: 50 },
-    beacon: { x: 78, y: 8 },
-    equipment_shelter: { x: 78, y: 78 },
-    fuel_tank: { x: 22, y: 82 },
-    ladder: { x: 22, y: 55 },
-    microwave: { x: 78, y: 44 },
+    lightning_rod: { x: 48, y: 5 },
+    beacon: { x: 51, y: 8 },
+    antenna: { x: 38, y: 14 },
+    antenna_mounting_frames: { x: 45, y: 25 },
+    rrh: { x: 58, y: 20 },
+    rf_jumpers: { x: 55, y: 22 },
+    microwave: { x: 38, y: 32 },
+    waveguides: { x: 52, y: 55 },
+    cable: { x: 48, y: 55 },
+    ladder: { x: 45, y: 45 },
+    equipment_shelter: { x: 30, y: 77 },
+    fcu: { x: 45, y: 85 },
+    power_cabinate: { x: 58, y: 78 },
+    diesel_generator: { x: 68, y: 75 },
+    fuel_tank: { x: 72, y: 70 },
   },
   guyed_mast: {
     lightning_rod: { x: 47, y: 8 },
@@ -81,7 +88,7 @@ export const labelOverrides: Record<
     lightning_rod: { x: 34, y: 5 },
     down_conductor: { x: 75, y: 20 },
     antenna_mounting_frames: { x: 42, y: 30 },
-    rrh: { x: 65, y: 24 },
+    rrh: { x: 62, y: 24 },
     rf_jumpers: { x: 75, y: 32 },
     microwave: { x: 30, y: 42 },
     cable: { x: 75, y: 50 },
@@ -108,15 +115,21 @@ export const labelOverrides: Record<
     power_cabinate: { x: 59, y: 90 },
   },
   tripole: {
-    antenna: { x: 78, y: 14 },
-    rrh: { x: 78, y: 26 },
-    tma: { x: 78, y: 36 },
-    cable: { x: 22, y: 50 },
-    beacon: { x: 78, y: 8 },
-    equipment_shelter: { x: 78, y: 78 },
-    fuel_tank: { x: 22, y: 82 },
-    ladder: { x: 22, y: 55 },
-    microwave: { x: 78, y: 44 },
+    lightning_rod: { x: 35, y: 5 },
+    beacon: { x: 67, y: 8 },
+    antenna: { x: 28, y: 14 },
+    antenna_mounting_frames: { x: 36, y: 25 },
+    rrh: { x: 70, y: 18 },
+    rf_jumpers: { x: 62, y: 26 },
+    microwave: { x: 30, y: 32 },
+    waveguides: { x: 75, y: 52 },
+    cable: { x: 28, y: 55 },
+    ladder: { x: 25, y: 45 },
+    equipment_shelter: { x: 30, y: 82 },
+    fcu: { x: 40, y: 90 },
+    power_cabinate: { x: 60, y: 90 },
+    diesel_generator: { x: 75, y: 80 },
+    fuel_tank: { x: 80, y: 70 },
   },
   guyed_mast: {
     lightning_rod: { x: 28, y: 8 }, // top left — Lightning Rod / Beacon area
@@ -280,12 +293,12 @@ export const ComponentLabels = ({
               transform: "translateY(-50%)",
             }}
           >
-            <div className="bg-transparent backdrop-blur-sm border border-none  rounded-md px-1.5 py-0.5 flex flex-col items-start">
-              <span className="text-[10px] font-semibold uppercase tracking-wide leading-none mb-0.5">
-                {formatLabel(e.id)}
+            <div className="bg-transparent max-w-3xs backdrop-blur-sm border border-none gap-1  rounded-md px-1.5 py-0.5 flex flex-wrap items-start">
+              <span className="text-[10px] font-semibold  tracking-wide leading-none mb-0.5">
+                {applyFormatting(e.id)}
               </span>
               <span className="text-[9px] font-semibold text-slate-800 leading-none">
-                {formatLabel(String(e.value))}
+                ({formatLabel(String(e.value))})
               </span>
             </div>
           </div>
@@ -303,12 +316,12 @@ export const ComponentLabels = ({
               transform: "translateY(-50%)",
             }}
           >
-            <div className="bg-transparent backdrop-blur-sm border border-none  rounded-md px-1.5 py-0.5 flex flex-col items-start">
-              <span className="text-[10px] font-semibold uppercase tracking-wide leading-none mb-0.5">
-                {formatLabel(e.id)}
+            <div className="bg-transparent backdrop-blur-sm border border-none gap-1 rounded-md px-1.5 py-0.5 flex justify-end flex-wrap items-start">
+              <span className="text-[10px] font-semibold tracking-wide leading-none mb-0.5">
+                {applyFormatting(e.id)}{" "}
               </span>
               <span className="text-[9px] font-semibold text-slate-800 leading-none">
-                {formatLabel(String(e.value))}
+                ({formatLabel(String(e.value))})
               </span>
             </div>
           </div>
