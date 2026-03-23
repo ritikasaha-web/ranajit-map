@@ -1,13 +1,8 @@
 "use client";
 import { applyFormatting, formatLabel } from "@/app/constants/component_names";
-import { useEffect, useRef, useState } from "react";
-import { BsFuelPumpDiesel } from "react-icons/bs";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-//controls where the line from component to label anchor points are (as % of container)
-export const anchorMap: Record<
-  string,
-  Record<string, { x: number; y: number }>
-> = {
+export const anchorMap: Record<string, Record<string, { x: number; y: number }>> = {
   monopole: {
     antenna: { x: 42, y: 17 },
     beacon: { x: 51, y: 8 },
@@ -75,13 +70,7 @@ export const anchorMap: Record<
   },
 };
 
-// Override where the label CHIP appears (% of container).
-// If omitted, spreadY auto-positions it.
-// controls where the label CHIP appears (% of container). If omitted, spreadY auto-positions it.
-export const labelOverrides: Record<
-  string,
-  Record<string, { x?: number; y?: number }>
-> = {
+export const labelOverrides: Record<string, Record<string, { x?: number; y?: number }>> = {
   monopole: {
     antenna: { x: 25, y: 17 },
     beacon: { x: 75, y: 8 },
@@ -132,7 +121,7 @@ export const labelOverrides: Record<
     fuel_tank: { x: 80, y: 70 },
   },
   guyed_mast: {
-    lightning_rod: { x: 28, y: 8 }, // top left — Lightning Rod / Beacon area
+    lightning_rod: { x: 28, y: 8 },
     antenna: { x: 20, y: 20 },
     beacon: { x: 78, y: 8 },
     rrh: { x: 83, y: 22 },
@@ -148,10 +137,11 @@ export const labelOverrides: Record<
     fuel_tank: { x: 78, y: 60 },
   },
 };
-function spreadY(rawPx: number[], minGap: number, maxPx: number): number[] {
+
+function spreadY(rawPx: number[], minGap: number, minPx: number, maxPx: number): number[] {
   if (!rawPx.length) return [];
   const indexed = rawPx.map((y, i) => ({ y, i })).sort((a, b) => a.y - b.y);
-  const pos = indexed.map((p) => Math.max(p.y, 14));
+  const pos = indexed.map((p) => Math.max(p.y, minPx + 14));
   for (let k = 1; k < pos.length; k++) {
     if (pos[k] - pos[k - 1] < minGap) pos[k] = pos[k - 1] + minGap;
   }
@@ -176,113 +166,145 @@ interface LabelEntry {
   side: "left" | "right";
 }
 
+interface ImgBounds {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 export const ComponentLabels = ({
   entries,
   overrides = {},
+  imgRef,
 }: {
   entries: LabelEntry[];
   overrides?: Record<string, { x?: number; y?: number }>;
+  imgRef?: React.RefObject<HTMLImageElement | null>;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
+  const [imgBounds, setImgBounds] = useState<ImgBounds | null>(null);
+
+  const computeImgBounds = useCallback(() => {
+    const el = ref.current;
+    const imgEl = imgRef?.current;
+    if (!el || !imgEl || !imgEl.naturalWidth || !imgEl.naturalHeight) return;
+
+    const cW = el.clientWidth;
+    const cH = el.clientHeight;
+    const cAspect = cW / cH;
+    const iAspect = imgEl.naturalWidth / imgEl.naturalHeight;
+
+    let w: number, h: number, x: number, y: number;
+    if (cAspect > iAspect) {
+      // container is wider than image → pillarbox (horizontal padding)
+      h = cH;
+      w = cH * iAspect;
+      x = (cW - w) / 2;
+      y = 0;
+    } else {
+      // container is taller than image → letterbox (vertical padding)
+      w = cW;
+      h = cW / iAspect;
+      x = 0;
+      y = (cH - h) / 2;
+    }
+
+    setImgBounds({ x, y, w, h });
+  }, [imgRef]);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const update = () => setDims({ w: el.clientWidth, h: el.clientHeight });
+    const update = () => {
+      setDims({ w: el.clientWidth, h: el.clientHeight });
+      computeImgBounds();
+    };
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [computeImgBounds]);
 
-  const baseDiv = (
-    <div ref={ref} className="absolute inset-0 pointer-events-none" />
-  );
+  // Recompute when the image finishes loading
+  useEffect(() => {
+    const imgEl = imgRef?.current;
+    if (!imgEl) return;
+    if (imgEl.complete && imgEl.naturalWidth) {
+      computeImgBounds();
+      return;
+    }
+    imgEl.addEventListener("load", computeImgBounds);
+    return () => imgEl.removeEventListener("load", computeImgBounds);
+  }, [imgRef, computeImgBounds]);
+
+  const baseDiv = <div ref={ref} className="absolute inset-0 pointer-events-none" />;
   if (!dims || dims.w === 0) return baseDiv;
 
   const { w, h } = dims;
-  const R_ELBOW_X = w * 0.78;
-  const L_ELBOW_X = w * 0.22;
 
+  // Fall back to full container if imgBounds not yet computed
+  const ib: ImgBounds = imgBounds ?? { x: 0, y: 0, w, h };
+
+  const R_ELBOW_X = ib.x + ib.w * 0.78;
+  const L_ELBOW_X = ib.x + ib.w * 0.22;
+
+  // Convert % anchor coords to absolute px, offset by image origin
   const toPx = (a: { x: number; y: number }) => ({
-    x: (a.x / 100) * w,
-    y: (a.y / 100) * h,
+    x: ib.x + (a.x / 100) * ib.w,
+    y: ib.y + (a.y / 100) * ib.h,
   });
 
   const left = entries.filter((e) => e.side === "left");
   const right = entries.filter((e) => e.side === "right");
 
-  // Auto-spread only for labels that have NO y override
   const autoSpreadRight = spreadY(
-    right.map((e) =>
-      overrides[e.id]?.y != null
-        ? (overrides[e.id].y! / 100) * h
-        : toPx(e.anchor).y,
-    ),
+    right.map((e) => (overrides[e.id]?.y != null ? ib.y + (overrides[e.id].y! / 100) * ib.h : toPx(e.anchor).y)),
     22,
-    h,
-  );
-  const autoSpreadLeft = spreadY(
-    left.map((e) =>
-      overrides[e.id]?.y != null
-        ? (overrides[e.id].y! / 100) * h
-        : toPx(e.anchor).y,
-    ),
-    22,
-    h,
+    ib.y,
+    ib.y + ib.h,
   );
 
-  // Final chip positions — override wins, else use spread result
+  const autoSpreadLeft = spreadY(
+    left.map((e) => (overrides[e.id]?.y != null ? ib.y + (overrides[e.id].y! / 100) * ib.h : toPx(e.anchor).y)),
+    22,
+    ib.y,
+    ib.y + ib.h,
+  );
+
   const resolveChip = (e: LabelEntry, autoY: number, defaultChipX: number) => {
     const ov = overrides[e.id] ?? {};
-    const chipX = ov.x != null ? (ov.x / 100) * w : defaultChipX;
-    const chipY = ov.y != null ? (ov.y / 100) * h : autoY;
+    const chipX = ov.x != null ? ib.x + (ov.x / 100) * ib.w : defaultChipX;
+    const chipY = ov.y != null ? ib.y + (ov.y / 100) * ib.h : autoY;
     return { chipX, chipY };
   };
 
-  const renderSide = (
-    sideEntries: LabelEntry[],
-    spreadYs: number[],
-    elbowX: number,
-    defaultChipX: number,
-    align: "left" | "right",
-  ) =>
+  const renderSide = (sideEntries: LabelEntry[], spreadYs: number[], elbowX: number, defaultChipX: number, align: "left" | "right") =>
     sideEntries.map((e, i) => {
       const { x: ax, y: ay } = toPx(e.anchor);
       const { chipX, chipY } = resolveChip(e, spreadYs[i], defaultChipX);
 
-      // Elbow x: if chip x was overridden, use that as the final horizontal target
       const finalElbowX = overrides[e.id]?.x != null ? chipX : elbowX;
 
       return (
         <g key={`l-${e.id}`}>
           <circle cx={ax} cy={ay} r={3} fill="rgba(0,0,0)" />
           <circle cx={ax} cy={ay} r={1.5} fill="rgb(0,0,0)" />
-          <polyline
-            points={`${ax},${ay} ${finalElbowX},${ay} ${finalElbowX},${chipY} ${chipX},${chipY}`}
-            fill="none"
-            stroke="rgb(0, 0, 0)"
-            strokeWidth="1"
-            strokeLinejoin="round"
-          />
+          <polyline points={`${ax},${ay} ${finalElbowX},${ay} ${finalElbowX},${chipY} ${chipX},${chipY}`} fill="none" stroke="rgb(0, 0, 0)" strokeWidth="1" strokeLinejoin="round" />
         </g>
       );
     });
 
   return (
     <div ref={ref} className="absolute inset-0 pointer-events-none z-20">
-      <svg
-        className="absolute inset-0 w-full h-full"
-        viewBox={`0 0 ${w} ${h}`}
-        style={{ overflow: "visible" }}
-      >
-        {renderSide(right, autoSpreadRight, R_ELBOW_X, w * 0.81, "left")}
-        {renderSide(left, autoSpreadLeft, L_ELBOW_X, w * 0.19, "right")}
+      <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 ${w} ${h}`} style={{ overflow: "visible" }}>
+        {renderSide(right, autoSpreadRight, R_ELBOW_X, ib.x + ib.w * 0.81, "left")}
+        {renderSide(left, autoSpreadLeft, L_ELBOW_X, ib.x + ib.w * 0.19, "right")}
       </svg>
 
       {right.map((e, i) => {
-        const { chipX, chipY } = resolveChip(e, autoSpreadRight[i], w * 0.81);
+        const { chipX, chipY } = resolveChip(e, autoSpreadRight[i], ib.x + ib.w * 0.81);
         return (
           <div
             key={`c-${e.id}`}
@@ -293,19 +315,16 @@ export const ComponentLabels = ({
               transform: "translateY(-50%)",
             }}
           >
-            <div className="bg-transparent max-w-3xs backdrop-blur-sm border border-none gap-1  rounded-md px-1.5 py-0.5 flex flex-wrap items-start">
-              <span className="text-[10px] font-semibold  tracking-wide leading-none mb-0.5">
-                {applyFormatting(e.id)}
-              </span>
-              <span className="text-[9px] font-semibold text-slate-800 leading-none">
-                ({formatLabel(String(e.value))})
-              </span>
+            <div className="bg-transparent max-w-3xs backdrop-blur-sm border border-none gap-1 rounded-md px-1.5 py-0.5 flex flex-wrap items-start">
+              <span className="text-[10px] font-semibold tracking-wide leading-none mb-0.5">{applyFormatting(e.id)}</span>
+              <span className="text-[9px] font-semibold text-slate-800 leading-none">({formatLabel(String(e.value))})</span>
             </div>
           </div>
         );
       })}
+
       {left.map((e, i) => {
-        const { chipX, chipY } = resolveChip(e, autoSpreadLeft[i], w * 0.19);
+        const { chipX, chipY } = resolveChip(e, autoSpreadLeft[i], ib.x + ib.w * 0.19);
         return (
           <div
             key={`c-${e.id}`}
@@ -317,12 +336,8 @@ export const ComponentLabels = ({
             }}
           >
             <div className="bg-transparent backdrop-blur-sm border border-none gap-1 rounded-md px-1.5 py-0.5 flex justify-end flex-wrap items-start">
-              <span className="text-[10px] font-semibold tracking-wide leading-none mb-0.5">
-                {applyFormatting(e.id)}{" "}
-              </span>
-              <span className="text-[9px] font-semibold text-slate-800 leading-none">
-                ({formatLabel(String(e.value))})
-              </span>
+              <span className="text-[10px] font-semibold tracking-wide leading-none mb-0.5">{applyFormatting(e.id)} </span>
+              <span className="text-[9px] font-semibold text-slate-800 leading-none">({formatLabel(String(e.value))})</span>
             </div>
           </div>
         );

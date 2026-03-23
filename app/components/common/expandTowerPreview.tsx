@@ -1,21 +1,10 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { RxCross2 } from "react-icons/rx";
 import { LuEye, LuEyeOff } from "react-icons/lu";
-import {
-  fourPoledComponentSet,
-  guyedMastComponentSet,
-  tripoleComponentSet,
-  monopoleComponentSet,
-  baseTypes,
-  applyFormatting,
-} from "@/app/constants/component_names";
+import { fourPoledComponentSet, guyedMastComponentSet, tripoleComponentSet, monopoleComponentSet, baseTypes, applyFormatting } from "@/app/constants/component_names";
 import { useTower } from "@/app/hooks/getTowers";
 import { useTowerStore, useExpandTowerStore } from "@/app/store/useTowerStore";
-import {
-  anchorMap,
-  labelOverrides,
-  ComponentLabels,
-} from "../shared/componentLabels";
+import { anchorMap, labelOverrides, ComponentLabels } from "../shared/componentLabels";
 
 const componentSetMap: Record<string, Set<string>> = {
   monopole: monopoleComponentSet,
@@ -41,39 +30,20 @@ const ExpandTowerPreview = () => {
   const isOnline = downtime === 0;
   const isSevere = downtime > 20;
 
-  const statusLabel = isOnline
-    ? "Online"
-    : isSevere
-      ? "Down"
-      : "Running at Risk";
-  const statusDot = isOnline
-    ? "bg-green-400"
-    : isSevere
-      ? "bg-red-400"
-      : "bg-orange-400";
-  const statusText = isOnline
-    ? "text-green-600"
-    : isSevere
-      ? "text-red-600"
-      : "text-orange-600";
-  const statusBg = isOnline
-    ? "bg-green-50 border-green-200"
-    : isSevere
-      ? "bg-red-50 border-red-200"
-      : "bg-orange-50 border-orange-200";
+  const statusLabel = isOnline ? "Online" : isSevere ? "Down" : "Running at Risk";
+  const statusDot = isOnline ? "bg-green-400" : isSevere ? "bg-red-400" : "bg-orange-400";
+  const statusText = isOnline ? "text-green-600" : isSevere ? "text-red-600" : "text-orange-600";
+  const statusBg = isOnline ? "bg-green-50 border-green-200" : isSevere ? "bg-red-50 border-red-200" : "bg-orange-50 border-orange-200";
 
-  const orderedTowerItems = Object.fromEntries(
-    [
-      ...(componentSetMap[currTower?.attributes?.structure_type] ??
-        monopoleComponentSet),
-    ].map((key) => [key, towerItems[key]]),
-  );
+  const orderedTowerItems = Object.fromEntries([...(componentSetMap[currTower?.attributes?.structure_type] ?? monopoleComponentSet)].map((key) => [key, towerItems[key]]));
 
-  const [activeComponents, setActiveComponents] = useState<Set<string>>(
-    new Set(),
-  );
+  const [activeComponents, setActiveComponents] = useState<Set<string>>(new Set());
   const [zoom, setZoom] = useState(false);
   const [origin, setOrigin] = useState({ x: 50, y: 50 });
+
+  // Ref attached to the structure image — used by ComponentLabels
+  // to compute the real rendered image bounds (accounts for object-contain letterboxing)
+  const structureImgRef = useRef<HTMLImageElement>(null);
 
   const toggleComponent = (component: string) => {
     setActiveComponents((prev) => {
@@ -92,15 +62,9 @@ const ExpandTowerPreview = () => {
     return activeComponents.has(component);
   };
 
-  const setExpandState = useExpandTowerStore(
-    (state) => state.setOpenExpandTower,
-  );
+  const setExpandState = useExpandTowerStore((state) => state.setOpenExpandTower);
 
-  const installationType =
-    currTower?.attributes?.structure_type === "monopole" &&
-    currTower?.attributes?.installation_type === "GBT"
-      ? "GBM"
-      : currTower?.attributes?.installation_type;
+  const installationType = currTower?.attributes?.structure_type === "monopole" && currTower?.attributes?.installation_type === "GBT" ? "GBM" : currTower?.attributes?.installation_type;
 
   const structureType = currTower?.attributes?.structure_type
     ?.replace(/_/g, " ")
@@ -116,10 +80,7 @@ const ExpandTowerPreview = () => {
         <div className="absolute top-0 inset-x-0 h-[3px] bg-gradient-to-r from-sky-500 to-blue-400 z-10" />
 
         {/* Close button */}
-        <button
-          onClick={() => setExpandState(false)}
-          className="absolute top-4 right-4 z-20 rounded-full p-2 bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition"
-        >
+        <button onClick={() => setExpandState(false)} className="absolute top-4 right-4 z-20 rounded-full p-2 bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition">
           <RxCross2 size={18} />
         </button>
 
@@ -144,11 +105,7 @@ const ExpandTowerPreview = () => {
             </div>
 
             {/* Active filter badge */}
-            {activeCount > 0 && (
-              <div className="absolute top-3 right-3 z-10 bg-sky-500 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full shadow-sm">
-                {activeCount} filtered
-              </div>
-            )}
+            {activeCount > 0 && <div className="absolute top-3 right-3 z-10 bg-sky-500 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full shadow-sm">{activeCount} filtered</div>}
 
             <div
               className="absolute inset-0 transition-transform duration-200 ease-out"
@@ -157,72 +114,55 @@ const ExpandTowerPreview = () => {
                 transformOrigin: `${origin.x}% ${origin.y}%`,
               }}
             >
+              <img src={`/${baseTypes[currTower?.attributes?.installation_type]}.webp`} alt="Installation" className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
+
+              {/* ── Structure image: attach ref here ── */}
               <img
-                src={`/${baseTypes[currTower?.attributes?.installation_type]}.webp`}
-                alt="Installation"
-                className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-              />
-              <img
+                ref={structureImgRef}
                 src={`/${currTower?.attributes?.structure_type}/${currTower?.attributes?.structure_type}.webp`}
                 alt="Structure"
                 className="absolute inset-0 w-full h-full object-contain pointer-events-none"
               />
+
               {Object.keys(orderedTowerItems)
                 .filter((item) => shouldRenderComponent(item))
                 .map((item) => (
                   <img
                     key={item}
-                    src={`/${currTower?.attributes?.structure_type}/${
-                      item === "cable" ? `${item}_${towerItems[item]}` : item
-                    }.webp`}
+                    src={`/${currTower?.attributes?.structure_type}/${item === "cable" ? `${item}_${towerItems[item]}` : item}.webp`}
                     alt={item}
                     className="absolute inset-0 w-full h-full object-contain pointer-events-none"
                   />
                 ))}
+
               <ComponentLabels
                 entries={Object.keys(orderedTowerItems)
                   .filter((key) => shouldRenderComponent(key))
                   .map((key) => ({
                     id: key,
                     value: towerItems[key],
-                    anchor: (anchorMap[currTower?.attributes?.structure_type] ??
-                      anchorMap.monopole)[key] ?? { x: 80, y: 50 },
-                    side:
-                      ((anchorMap[currTower?.attributes?.structure_type] ??
-                        anchorMap.monopole)[key]?.x ?? 80) >= 50
-                        ? "right"
-                        : "left",
+                    anchor: (anchorMap[currTower?.attributes?.structure_type] ?? anchorMap.monopole)[key] ?? { x: 80, y: 50 },
+                    side: ((anchorMap[currTower?.attributes?.structure_type] ?? anchorMap.monopole)[key]?.x ?? 80) >= 50 ? "right" : "left",
                   }))}
-                overrides={
-                  labelOverrides[currTower?.attributes?.structure_type] ?? {}
-                }
+                overrides={labelOverrides[currTower?.attributes?.structure_type] ?? {}}
+                imgRef={structureImgRef}
               />
             </div>
           </div>
 
           {/* Status bar below image */}
-          <div
-            className={`mt-3 flex items-center justify-between rounded-xl border px-4 py-2 text-xs ${statusBg}`}
-          >
+          <div className={`mt-3 flex items-center justify-between rounded-xl border px-4 py-2 text-xs ${statusBg}`}>
             <div className="flex items-center gap-2">
               <span className={`w-2 h-2 rounded-full ${statusDot}`} />
               <span className={`font-bold ${statusText}`}>{statusLabel}</span>
             </div>
             <div className="flex items-center gap-3 text-slate-600">
               <span>
-                ↑{" "}
-                <span className="font-semibold text-green-600">
-                  {formatDuration(uptime)}
-                </span>
+                ↑ <span className="font-semibold text-green-600">{formatDuration(uptime)}</span>
               </span>
               <span className="text-slate-300">|</span>
               <span>
-                ↓{" "}
-                <span
-                  className={`font-semibold ${isOnline ? "text-slate-400" : statusText}`}
-                >
-                  {isOnline ? "No Downtime" : formatDuration(downtime)}
-                </span>
+                ↓ <span className={`font-semibold ${isOnline ? "text-slate-400" : statusText}`}>{isOnline ? "No Downtime" : formatDuration(downtime)}</span>
               </span>
             </div>
           </div>
@@ -232,41 +172,22 @@ const ExpandTowerPreview = () => {
         <div className="flex flex-col w-[45%] pt-8 pb-6 px-6">
           {/* Header */}
           <div className="mb-5 pr-8">
-            <p className="text-[9px] uppercase tracking-widest text-slate-400 mb-1">
-              Tower ID
-            </p>
-            <h1 className="text-lg font-bold text-slate-800 leading-snug break-all">
-              {currTower?.thingId}
-            </h1>
+            <p className="text-[9px] uppercase tracking-widest text-slate-400 mb-1">Tower ID</p>
+            <h1 className="text-lg font-bold text-slate-800 leading-snug break-all">{currTower?.thingId}</h1>
             <div className="flex items-center gap-2 mt-2 flex-wrap">
-              {installationType && (
-                <span className="text-[10px] font-semibold bg-sky-50 text-sky-700 border border-sky-200 px-2.5 py-0.5 rounded-full">
-                  {installationType}
-                </span>
-              )}
-              {structureType && (
-                <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-0.5 rounded-full">
-                  {structureType}
-                </span>
-              )}
+              {installationType && <span className="text-[10px] font-semibold bg-sky-50 text-sky-700 border border-sky-200 px-2.5 py-0.5 rounded-full">{installationType}</span>}
+              {structureType && <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-0.5 rounded-full">{structureType}</span>}
               {currTower?.attributes?.height_m && (
-                <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-0.5 rounded-full">
-                  {currTower.attributes.height_m}m
-                </span>
+                <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-0.5 rounded-full">{currTower.attributes.height_m}m</span>
               )}
             </div>
           </div>
 
           {/* Section label */}
           <div className="flex items-center justify-between mb-2">
-            <p className="text-[9px] uppercase tracking-widest text-slate-400 font-semibold">
-              Components
-            </p>
+            <p className="text-[9px] uppercase tracking-widest text-slate-400 font-semibold">Components</p>
             {activeCount > 0 && (
-              <button
-                onClick={() => setActiveComponents(new Set())}
-                className="text-[10px] text-sky-500 hover:text-sky-700 font-medium transition"
-              >
+              <button onClick={() => setActiveComponents(new Set())} className="text-[10px] text-sky-500 hover:text-sky-700 font-medium transition">
                 Reset filter
               </button>
             )}
@@ -282,31 +203,14 @@ const ExpandTowerPreview = () => {
                 <div
                   key={key}
                   className={`flex items-center justify-between rounded-xl border px-3 py-2.5 transition-all ${
-                    isActive
-                      ? "border-sky-300 bg-sky-50"
-                      : isFiltering
-                        ? "border-slate-100 bg-slate-50/50 opacity-50"
-                        : "border-slate-200 hover:border-sky-200 hover:bg-sky-50/40"
+                    isActive ? "border-sky-300 bg-sky-50" : isFiltering ? "border-slate-100 bg-slate-50/50 opacity-50" : "border-slate-200 hover:border-sky-200 hover:bg-sky-50/40"
                   }`}
                 >
-                  <span className="text-sm font-medium text-slate-700">
-                    {applyFormatting(key)}
-                  </span>
+                  <span className="text-sm font-medium text-slate-700">{applyFormatting(key)}</span>
 
                   <div className="flex items-center gap-3">
-                    <span
-                      className={`text-sm font-semibold ${isActive ? "text-sky-700" : "text-slate-600"}`}
-                    >
-                      {applyFormatting(String(value))}
-                    </span>
-                    <button
-                      onClick={() => toggleComponent(key)}
-                      className={`transition-colors p-0.5 rounded ${
-                        isActive
-                          ? "text-sky-500"
-                          : "text-slate-300 hover:text-slate-500"
-                      }`}
-                    >
+                    <span className={`text-sm font-semibold ${isActive ? "text-sky-700" : "text-slate-600"}`}>{applyFormatting(String(value))}</span>
+                    <button onClick={() => toggleComponent(key)} className={`transition-colors p-0.5 rounded ${isActive ? "text-sky-500" : "text-slate-300 hover:text-slate-500"}`}>
                       {isActive ? <LuEye size={15} /> : <LuEyeOff size={15} />}
                     </button>
                   </div>
