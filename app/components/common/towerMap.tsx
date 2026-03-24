@@ -98,8 +98,8 @@ const TowerMap = () => {
   const { data: selectedTower } = useTower(selectedTowerId ?? undefined);
   const icon_url = (down_time: number) => {
     if (down_time == 0) return "/images/tower_icon_green.png";
-    else if (down_time > 0 && down_time < 20)
-      return "/images/tower_icon_orange.png";
+    // else if (down_time > 0 && down_time < 20)
+    //   return "/images/tower_icon_orange.png";
     return "/images/tower_icon_red.png";
   };
 

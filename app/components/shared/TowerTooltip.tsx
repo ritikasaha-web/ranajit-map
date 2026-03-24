@@ -37,7 +37,8 @@ const TowerTooltip = ({
     [thingId],
   ); // keyed to thingId so each tower gets stable values
   const isOnline = down_time === 0;
-  const isSevere = down_time > 20;
+  const isSevere = down_time > 0;
+  // const isSevere = down_time > 20;
 
   const statusLabel = isOnline
     ? "Online"

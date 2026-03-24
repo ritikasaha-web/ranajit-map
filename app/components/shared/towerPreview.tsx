@@ -101,7 +101,8 @@ const TowerPreview = ({
 
   let downtimeLabel = "OK";
   let downtimeColor = "text-green-600 bg-green-50 border-green-200";
-  if (down_time > 20) {
+  // if (down_time > 20) {
+  if (down_time > 0) {
     downtimeLabel = "Down";
     downtimeColor = "text-red-600 bg-red-50 border-red-200";
   } else if (down_time > 0) {

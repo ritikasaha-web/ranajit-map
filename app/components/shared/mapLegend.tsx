@@ -6,12 +6,12 @@ const MapLegend = () => {
       sub: "No downtime",
       color: "#16a34a",
     },
-    {
-      icon: "/images/tower_icon_orange.png",
-      label: "Running at Risk",
-      sub: "< 20 min down",
-      color: "#ea580c",
-    },
+    // {
+    //   icon: "/images/tower_icon_orange.png",
+    //   label: "Running at Risk",
+    //   sub: "< 20 min down",
+    //   color: "#ea580c",
+    // },
     {
       icon: "/images/tower_icon_red.png",
       label: "Down",

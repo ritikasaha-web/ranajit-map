@@ -1,5 +1,3 @@
-"use client";
-import { useState } from "react";
 import TwinOverview from "../twinOverview";
 import SearchTower from "../shared/searchTower";
 import dynamic from "next/dynamic";
