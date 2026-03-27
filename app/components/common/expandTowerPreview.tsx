@@ -1,4 +1,10 @@
-import React, { useRef, useState } from "react";
+import React, {
+  useRef,
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+} from "react";
 import { RxCross2 } from "react-icons/rx";
 import { LuEye, LuEyeOff } from "react-icons/lu";
 import {
@@ -16,7 +22,13 @@ import {
   labelOverrides,
   ComponentLabels,
 } from "../shared/componentLabels";
+import {
+  ComponentLayer,
+  generateTowerImage,
+  prefetchLayers,
+} from "@/app/constants/component_names"; // ← shared with TowerPreview
 
+/* ── Module-level constants ─────────────────────────────────── */
 const componentSetMap: Record<string, Set<string>> = {
   monopole: monopoleComponentSet,
   tripole: tripoleComponentSet,
@@ -32,15 +44,19 @@ const formatDuration = (minutes: number): string => {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 };
 
+/* ── Main Component ─────────────────────────────────────────── */
 const ExpandTowerPreview = () => {
   const { data: currTower } = useTower(useTowerStore((s) => s.selectedTowerId));
+  const setExpandState = useExpandTowerStore((s) => s.setOpenExpandTower);
+
   const towerItems = currTower?.features?.components?.properties || {};
   const downtime = currTower?.attributes?.down_time ?? 0;
   const uptime = currTower?.attributes?.uptime ?? 0;
+  const rawStructureType = currTower?.attributes?.structure_type;
+  const rawInstallationType = currTower?.attributes?.installation_type;
 
   const isOnline = downtime === 0;
-  // const isSevere = downtime > 20;
-  const isSevere = downtime > 0;
+  const isSevere = downtime > 20;
 
   const statusLabel = isOnline
     ? "Online"
@@ -63,12 +79,62 @@ const ExpandTowerPreview = () => {
       ? "bg-red-50 border-red-200"
       : "bg-orange-50 border-orange-200";
 
-  const orderedTowerItems = Object.fromEntries(
-    [
-      ...(componentSetMap[currTower?.attributes?.structure_type] ??
-        monopoleComponentSet),
-    ].map((key) => [key, towerItems[key]]),
+  const installationType =
+    rawStructureType === "monopole" && rawInstallationType === "GBT"
+      ? "GBM"
+      : rawInstallationType;
+
+  const structureType = rawStructureType
+    ?.replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c: string) => c.toUpperCase());
+
+  /* ── Stable anchor map for this structure type ── */
+  const anchors = useMemo(
+    () => anchorMap[rawStructureType] ?? anchorMap.monopole,
+    [rawStructureType],
   );
+
+  /* ── All possible layers (base + components), regardless of filter ── */
+  const allLayers = useMemo<ComponentLayer[]>(() => {
+    const towerComponents =
+      componentSetMap[rawStructureType] ?? monopoleComponentSet;
+
+    const base: ComponentLayer[] = [
+      {
+        src: `/${baseTypes[rawInstallationType]}.webp`,
+        id: "__base__",
+        anchor: { x: 50, y: 50 },
+      },
+      {
+        src: `/${rawStructureType}/${rawStructureType}.webp`,
+        id: "__structure__",
+        anchor: { x: 50, y: 50 },
+      },
+    ];
+
+    const componentLayers: ComponentLayer[] = [];
+    for (const key of towerComponents) {
+      const value = towerItems[key];
+      if (value === undefined || value === null) continue;
+      if (typeof value === "number" && value <= 0) continue;
+      if (typeof value === "string" && value.trim() === "") continue;
+
+      componentLayers.push({
+        src: `/${rawStructureType}/${key === "cable" ? `cable_${value}` : key}.webp`,
+        id: key,
+        anchor: anchors[key] ?? { x: 80, y: 50 },
+      });
+    }
+
+    return [...base, ...componentLayers];
+  }, [towerItems, rawStructureType, rawInstallationType, anchors]);
+
+  /* ── Prefetch all layer bitmaps as soon as tower data is ready,
+        so they're in cache before generateTowerImage is called ── */
+  useEffect(() => {
+    if (allLayers.length) prefetchLayers(allLayers);
+  }, [allLayers]);
 
   const [activeComponents, setActiveComponents] = useState<Set<string>>(
     new Set(),
@@ -76,41 +142,79 @@ const ExpandTowerPreview = () => {
   const [zoom, setZoom] = useState(false);
   const [origin, setOrigin] = useState({ x: 50, y: 50 });
 
-  // Ref attached to the structure image — used by ComponentLabels
-  // to compute the real rendered image bounds (accounts for object-contain letterboxing)
+  /* ── Composited image state — one <img> instead of N layers ── */
+  const [compositeImage, setCompositeImage] = useState<string | null>(null);
+
   const structureImgRef = useRef<HTMLImageElement>(null);
 
-  const toggleComponent = (component: string) => {
+  /* ── Visible layers — filtered by activeComponents ── */
+  const visibleLayers = useMemo(
+    () =>
+      allLayers.filter(
+        (l) =>
+          l.id.startsWith("__") || // always show base layers
+          activeComponents.size === 0 ||
+          activeComponents.has(l.id),
+      ),
+    [allLayers, activeComponents],
+  );
+
+  /* ── Re-composite whenever visible layers change ── */
+  useEffect(() => {
+    let cancelled = false;
+    generateTowerImage(visibleLayers).then((img) => {
+      if (!cancelled) setCompositeImage(img);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [visibleLayers]);
+
+  /* ── Stable callbacks ── */
+  const toggleComponent = useCallback((component: string) => {
     setActiveComponents((prev) => {
       const next = new Set(prev);
       next.has(component) ? next.delete(component) : next.add(component);
       return next;
     });
-  };
+  }, []);
 
-  const shouldRenderComponent = (component: string) => {
-    const value = towerItems[component];
-    if (value === undefined || value === null) return false;
-    if (typeof value === "number" && value <= 0) return false;
-    if (typeof value === "string" && value.trim() === "") return false;
-    if (activeComponents.size === 0) return true;
-    return activeComponents.has(component);
-  };
+  const resetFilter = useCallback(() => setActiveComponents(new Set()), []);
 
-  const setExpandState = useExpandTowerStore(
-    (state) => state.setOpenExpandTower,
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setOrigin({
+      x: ((e.clientX - rect.left) / rect.width) * 100,
+      y: ((e.clientY - rect.top) / rect.height) * 100,
+    });
+  }, []);
+
+  /* ── Label entries for visible component layers only ── */
+  const labelEntries = useMemo(
+    () =>
+      visibleLayers
+        .filter((l) => !l.id.startsWith("__"))
+        .map((l) => ({
+          id: l.id,
+          value: towerItems[l.id],
+          anchor: l.anchor,
+          side: ((anchors[l.id]?.x ?? 80) >= 50 ? "right" : "left") as
+            | "right"
+            | "left",
+        })),
+    [visibleLayers, towerItems, anchors],
   );
 
-  const installationType =
-    currTower?.attributes?.structure_type === "monopole" &&
-    currTower?.attributes?.installation_type === "GBT"
-      ? "GBM"
-      : currTower?.attributes?.installation_type;
-
-  const structureType = currTower?.attributes?.structure_type
-    ?.replace(/_/g, " ")
-    .toLowerCase()
-    .replace(/\b\w/g, (c: string) => c.toUpperCase());
+  /* ── Ordered items for the right-panel list ── */
+  const orderedTowerItems = useMemo(
+    () =>
+      Object.fromEntries(
+        [...(componentSetMap[rawStructureType] ?? monopoleComponentSet)].map(
+          (key) => [key, towerItems[key]],
+        ),
+      ),
+    [towerItems, rawStructureType],
+  );
 
   const activeCount = activeComponents.size;
 
@@ -130,25 +234,17 @@ const ExpandTowerPreview = () => {
 
         {/* ── LEFT: Tower Visual ── */}
         <div className="flex flex-col w-[55%] p-6 pt-8 border-r border-slate-100">
-          {/* Visual container */}
           <div
             className="relative flex-1 rounded-2xl overflow-hidden border border-slate-200 bg-white cursor-crosshair"
             onMouseEnter={() => setZoom(true)}
             onMouseLeave={() => setZoom(false)}
-            onMouseMove={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
-              setOrigin({
-                x: ((e.clientX - rect.left) / rect.width) * 100,
-                y: ((e.clientY - rect.top) / rect.height) * 100,
-              });
-            }}
+            onMouseMove={handleMouseMove}
           >
             {/* Zoom hint */}
             <div className="absolute top-3 left-3 z-10 bg-white/80 backdrop-blur-sm border border-slate-200 text-slate-500 text-[10px] font-medium px-2.5 py-1 rounded-full shadow-sm">
               Hover to zoom
             </div>
 
-            {/* Active filter badge */}
             {activeCount > 0 && (
               <div className="absolute top-3 right-3 z-10 bg-sky-500 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full shadow-sm">
                 {activeCount} filtered
@@ -162,54 +258,25 @@ const ExpandTowerPreview = () => {
                 transformOrigin: `${origin.x}% ${origin.y}%`,
               }}
             >
-              <img
-                src={`/${baseTypes[currTower?.attributes?.installation_type]}.webp`}
-                alt="Installation"
-                className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-              />
-
-              {/* ── Structure image: attach ref here ── */}
-              <img
-                ref={structureImgRef}
-                src={`/${currTower?.attributes?.structure_type}/${currTower?.attributes?.structure_type}.webp`}
-                alt="Structure"
-                className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-              />
-
-              {Object.keys(orderedTowerItems)
-                .filter((item) => shouldRenderComponent(item))
-                .map((item) => (
-                  <img
-                    key={item}
-                    src={`/${currTower?.attributes?.structure_type}/${item === "cable" ? `${item}_${towerItems[item]}` : item}.webp`}
-                    alt={item}
-                    className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-                  />
-                ))}
+              {/* Single composited image instead of N stacked <img> tags */}
+              {compositeImage && (
+                <img
+                  ref={structureImgRef}
+                  src={compositeImage}
+                  alt="Tower"
+                  className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+                />
+              )}
 
               <ComponentLabels
-                entries={Object.keys(orderedTowerItems)
-                  .filter((key) => shouldRenderComponent(key))
-                  .map((key) => ({
-                    id: key,
-                    value: towerItems[key],
-                    anchor: (anchorMap[currTower?.attributes?.structure_type] ??
-                      anchorMap.monopole)[key] ?? { x: 80, y: 50 },
-                    side:
-                      ((anchorMap[currTower?.attributes?.structure_type] ??
-                        anchorMap.monopole)[key]?.x ?? 80) >= 50
-                        ? "right"
-                        : "left",
-                  }))}
-                overrides={
-                  labelOverrides[currTower?.attributes?.structure_type] ?? {}
-                }
+                entries={labelEntries}
+                overrides={labelOverrides[rawStructureType] ?? {}}
                 imgRef={structureImgRef}
               />
             </div>
           </div>
 
-          {/* Status bar below image */}
+          {/* Status bar */}
           <div
             className={`mt-3 flex items-center justify-between rounded-xl border px-4 py-2 text-xs ${statusBg}`}
           >
@@ -239,7 +306,6 @@ const ExpandTowerPreview = () => {
 
         {/* ── RIGHT: Details ── */}
         <div className="flex flex-col w-[45%] pt-8 pb-6 px-6">
-          {/* Header */}
           <div className="mb-5 pr-8">
             <p className="text-[9px] uppercase tracking-widest text-slate-400 mb-1">
               Tower ID
@@ -266,14 +332,13 @@ const ExpandTowerPreview = () => {
             </div>
           </div>
 
-          {/* Section label */}
           <div className="flex items-center justify-between mb-2">
             <p className="text-[9px] uppercase tracking-widest text-slate-400 font-semibold">
               Components
             </p>
             {activeCount > 0 && (
               <button
-                onClick={() => setActiveComponents(new Set())}
+                onClick={resetFilter}
                 className="text-[10px] text-sky-500 hover:text-sky-700 font-medium transition"
               >
                 Reset filter
@@ -281,11 +346,10 @@ const ExpandTowerPreview = () => {
             )}
           </div>
 
-          {/* Components list */}
           <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
-            {Object.entries(towerItems).map(([key, value]) => {
+            {Object.entries(orderedTowerItems).map(([key, value]) => {
               const isActive = activeComponents.has(key);
-              const isFiltering = activeComponents.size > 0;
+              const isFiltering = activeCount > 0;
 
               return (
                 <div
@@ -301,7 +365,6 @@ const ExpandTowerPreview = () => {
                   <span className="text-sm font-medium text-slate-700">
                     {applyFormatting(key)}
                   </span>
-
                   <div className="flex items-center gap-3">
                     <span
                       className={`text-sm font-semibold ${isActive ? "text-sky-700" : "text-slate-600"}`}

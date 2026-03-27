@@ -1,3 +1,4 @@
+"use client";
 import {
   fourPoledComponentSet,
   monopoleComponentSet,
@@ -13,14 +14,14 @@ import {
 } from "@/app/store/useTowerStore";
 import { GrGallery } from "react-icons/gr";
 import { anchorMap, ComponentLabels, labelOverrides } from "./componentLabels";
+import { useState, useEffect, useMemo } from "react";
+import {
+  ComponentLayer,
+  generateTowerImage,
+  prefetchLayers,
+} from "@/app/constants/component_names"; // ← shared with expandTowerPreview
 
 /* ── Types ──────────────────────────────────────────────────── */
-
-interface ComponentLayer {
-  src: string;
-  id: string; // matches key in components / siteData
-  anchor: { x: number; y: number }; // % from top-left of container
-}
 
 interface TowerPreviewProps {
   structureType: string;
@@ -29,6 +30,7 @@ interface TowerPreviewProps {
   uptime: number;
   down_time: number;
 }
+
 /* ── Component Set Map ──────────────────────────────────────── */
 const componentSetMap: Record<string, Set<string>> = {
   monopole: monopoleComponentSet,
@@ -37,12 +39,7 @@ const componentSetMap: Record<string, Set<string>> = {
   guyed_mast: guyedMastComponentSet,
 };
 
-/* ── Anchor layouts per tower type ──────────────────────────────
-   x/y are percentages relative to the container (0–100).
-   Adjust these once you see how images are positioned visually.
-────────────────────────────────────────────────────────────── */
-
-/* ── Helpers ────────────────────────────────────────────────── */
+/* ── Pure helpers (module-level, not recreated on each render) ── */
 const formatDuration = (minutes: number): string => {
   const totalSeconds = minutes * 60;
   const h = Math.floor(totalSeconds / 3600);
@@ -59,46 +56,12 @@ const TowerPreview = ({
   down_time,
   uptime,
 }: TowerPreviewProps) => {
-  const installation_type = `/${baseTypes[installationType]}.webp`;
-  const structure: string = `/${structureType}/${structureType}.webp`;
+  const [finalImage, setFinalImage] = useState<string | null>(null);
 
-  const towerComponents =
-    componentSetMap[structureType] ?? monopoleComponentSet;
-  const anchors = anchorMap[structureType] ?? anchorMap.monopole;
-
-  /* Build component layer array (replaces flat layeredimgs) */
-  const baseLayers: ComponentLayer[] = [
-    { src: installation_type, id: "__base__", anchor: { x: 50, y: 50 } },
-    { src: structure, id: "__structure__", anchor: { x: 50, y: 50 } },
-  ];
-
-  const componentLayers: ComponentLayer[] = [];
-
-  [...towerComponents].forEach((key) => {
-    const value = components[key];
-    if (value === null || value === undefined) return;
-    if (typeof value === "string" && value.trim() === "") return;
-    if (typeof value === "number" && value < 0) return;
-
-    const src =
-      key === "cable" && typeof value !== "number"
-        ? `/${structureType}/cable_${value}.webp`
-        : `/${structureType}/${key}.webp`;
-
-    componentLayers.push({
-      src,
-      id: key,
-      anchor: anchors[key] ?? { x: 80, y: 50 },
-    });
-  });
-
-  const allLayers = [...baseLayers, ...componentLayers];
-
-  const setExpandState = useExpandTowerStore(
-    (state) => state.setOpenExpandTower,
-  );
+  const setExpandState = useExpandTowerStore((s) => s.setOpenExpandTower);
   const setSitePhotosOpen = useSitePhotosStore((s) => s.setSitePhotosOpen);
 
+  // ── Kept exactly as original ──
   let downtimeLabel = "OK";
   let downtimeColor = "text-green-600 bg-green-50 border-green-200";
   // if (down_time > 20) {
@@ -109,6 +72,98 @@ const TowerPreview = ({
     downtimeLabel = "Running at Risk";
     downtimeColor = "text-orange-600 bg-orange-50 border-orange-200";
   }
+
+  // ── Single useMemo builds layers — eliminates the duplicate
+  //    baseLayers/componentLayers + allLayers + memoLayers pattern ──
+  const layers = useMemo<ComponentLayer[]>(() => {
+    const towerComponents =
+      componentSetMap[structureType] ?? monopoleComponentSet;
+    const anchors = anchorMap[structureType] ?? anchorMap.monopole;
+
+    const base: ComponentLayer[] = [
+      {
+        src: `/${baseTypes[installationType]}.webp`,
+        id: "__base__",
+        anchor: { x: 50, y: 50 },
+      },
+      {
+        src: `/${structureType}/${structureType}.webp`,
+        id: "__structure__",
+        anchor: { x: 50, y: 50 },
+      },
+    ];
+
+    const componentLayers: ComponentLayer[] = [];
+    for (const key of towerComponents) {
+      const value = components[key];
+      if (value === null || value === undefined) continue;
+      if (typeof value === "string" && value.trim() === "") continue;
+      if (typeof value === "number" && value < 0) continue;
+
+      const src =
+        key === "cable" && typeof value !== "number"
+          ? `/${structureType}/cable_${value}.webp`
+          : `/${structureType}/${key}.webp`;
+
+      componentLayers.push({
+        src,
+        id: key,
+        anchor: anchors[key] ?? { x: 80, y: 50 },
+      });
+    }
+
+    return [...base, ...componentLayers];
+  }, [components, structureType, installationType]);
+
+  // ── Warm the bitmap cache as soon as layer srcs are known ──
+  useEffect(() => {
+    if (layers.length) prefetchLayers(layers);
+  }, [layers]);
+
+  // ── Memoize label entries so ComponentLabels never gets a new
+  //    array reference unless layers/components actually change ──
+  const labelEntries = useMemo(
+    () =>
+      layers
+        .filter((l) => !l.id.startsWith("__") && components[l.id] != null)
+        .map((l) => ({
+          id: l.id,
+          value: components[l.id],
+          anchor: l.anchor,
+          side: (l.anchor.x >= 50 ? "right" : "left") as "right" | "left",
+        })),
+    [layers, components],
+  );
+
+  // ── Memoize visible tower-detail rows ──
+  const towerComponents = useMemo(
+    () => componentSetMap[structureType] ?? monopoleComponentSet,
+    [structureType],
+  );
+
+  const detailRows = useMemo(
+    () =>
+      [...towerComponents].filter((key) => {
+        const v = components[key];
+        if (v === null || v === undefined) return false;
+        if (typeof v === "string") return v.trim() !== "";
+        if (typeof v === "number") return true;
+        if (typeof v === "boolean") return true;
+        return false;
+      }),
+    [towerComponents, components],
+  );
+
+  // ── Effect with stale-result guard ──
+  useEffect(() => {
+    let cancelled = false;
+    generateTowerImage(layers).then((img: any) => {
+      if (!cancelled) setFinalImage(img);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [layers]);
 
   return (
     <div className="w-full h-full bg-white rounded-lg p-2 flex flex-col gap-3">
@@ -140,26 +195,16 @@ const TowerPreview = ({
           </span>
         </div>
 
-        {/* Image layers — unchanged rendering logic */}
-        {allLayers.map((layer, index) => (
+        {finalImage && (
           <img
-            key={index}
-            src={layer.src}
-            alt={`Layer ${index}`}
+            src={finalImage}
+            alt="Tower preview"
             className="absolute inset-0 w-full h-full object-contain pointer-events-none"
           />
-        ))}
+        )}
 
-        {/* Component labels — rendered on top of images */}
         <ComponentLabels
-          entries={componentLayers
-            .filter((layer) => components[layer.id] != null)
-            .map((layer) => ({
-              id: layer.id,
-              value: components[layer.id],
-              anchor: layer.anchor,
-              side: layer.anchor.x >= 50 ? "right" : "left",
-            }))}
+          entries={labelEntries}
           overrides={labelOverrides[structureType] ?? {}}
         />
       </div>
@@ -185,28 +230,19 @@ const TowerPreview = ({
           Tower Details
         </h2>
         <div className="space-y-1">
-          {[...towerComponents]
-            .filter((key) => {
-              const v = components[key];
-              if (v === null || v === undefined) return false;
-              if (typeof v === "string") return v.trim() !== "";
-              if (typeof v === "number") return true;
-              if (typeof v === "boolean") return true;
-              return false;
-            })
-            .map((key) => (
-              <div
-                key={key}
-                className="grid grid-cols-[1fr_auto] gap-2 items-center border-b border-slate-200 py-0.5"
-              >
-                <span className="text-slate-700 font-medium">
-                  {formatLabel(key)}
-                </span>
-                <span className="text-slate-800 font-semibold tabular-nums">
-                  {formatLabel(String(components[key]))}
-                </span>
-              </div>
-            ))}
+          {detailRows.map((key) => (
+            <div
+              key={key}
+              className="grid grid-cols-[1fr_auto] gap-2 items-center border-b border-slate-200 py-0.5"
+            >
+              <span className="text-slate-700 font-medium">
+                {formatLabel(key)}
+              </span>
+              <span className="text-slate-800 font-semibold tabular-nums">
+                {formatLabel(String(components[key]))}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
