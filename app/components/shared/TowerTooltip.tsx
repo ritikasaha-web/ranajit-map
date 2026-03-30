@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+
 interface TowerTooltipProps {
   thingId: string;
   down_time: number;
@@ -7,6 +8,7 @@ interface TowerTooltipProps {
   eb_sanction_load?: number;
   id_od?: string;
   dg?: string;
+  imageUrl?: string;
 }
 
 const formatDuration = (minutes: number): string => {
@@ -25,6 +27,7 @@ const TowerTooltip = ({
   eb_sanction_load,
   id_od,
   dg,
+  imageUrl,
 }: TowerTooltipProps) => {
   const randomized = useMemo(
     () => ({
@@ -35,10 +38,10 @@ const TowerTooltip = ({
       dg: dg ?? ["Running", "Standby", "Off"][Math.floor(Math.random() * 3)],
     }),
     [thingId],
-  ); // keyed to thingId so each tower gets stable values
+  );
+
   const isOnline = down_time === 0;
   const isSevere = down_time > 0;
-  // const isSevere = down_time > 20;
 
   const statusLabel = isOnline
     ? "Online"
@@ -49,185 +52,236 @@ const TowerTooltip = ({
   const statusBg = isOnline ? "#f0fdf4" : isSevere ? "#fef2f2" : "#fff7ed";
   const statusBorder = isOnline ? "#bbf7d0" : isSevere ? "#fecaca" : "#fed7aa";
 
+  const resolvedImage = imageUrl ?? "https://placehold.co/90x240?text=Tower";
+
   return (
     <div
       style={{
-        width: "230px",
+        display: "flex",
+        flexDirection: "row",
+        width: "340px",
+        minWidth: "340px",
         background: "#ffffff",
-        whiteSpace: "normal",
-        minWidth: "230px", // 👈 add this
         borderRadius: "10px",
         overflow: "hidden",
         fontFamily: "system-ui, -apple-system, sans-serif",
         boxShadow:
           "0 4px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(14,165,233,0.15)",
-        position: "relative",
       }}
     >
-      {/* Blue top accent bar */}
+      {/* ── Left: data block ── */}
       <div
         style={{
-          height: "3px",
-          background: "linear-gradient(90deg, #0284c7, #38bdf8)",
+          flex: 1,
+          minWidth: 0,
+          display: "flex",
+          flexDirection: "column",
         }}
-      />
-
-      {/* Header */}
-      <div
-        style={{ padding: "10px 14px 8px", borderBottom: "1px solid #f1f5f9" }}
       >
-        <p
-          style={{
-            fontSize: "9px",
-            letterSpacing: "0.1em",
-            color: "#94a3b8",
-            textTransform: "uppercase",
-            marginBottom: "2px",
-          }}
-        >
-          Tower ID
-        </p>
+        {/* Blue top accent bar */}
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "8px",
-            overflow: "hidden",
+            height: "3px",
+            background: "linear-gradient(90deg, #0284c7, #38bdf8)",
+            flexShrink: 0,
+          }}
+        />
+
+        {/* Header */}
+        <div
+          style={{
+            padding: "10px 14px 8px",
+            borderBottom: "1px solid #f1f5f9",
           }}
         >
           <p
             style={{
-              fontSize: "12px",
-              fontWeight: 700,
-              color: "#0f172a",
-              letterSpacing: "-0.01em",
-              wordBreak: "break-all",
-              flex: 1,
-              whiteSpace: "normal", // 👈 override Leaflet's nowrap
-              minWidth: 0,
+              fontSize: "9px",
+              letterSpacing: "0.1em",
+              color: "#94a3b8",
+              textTransform: "uppercase",
+              marginBottom: "2px",
             }}
           >
-            {thingId}
+            Tower ID
           </p>
-          {/* Status badge */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "5px",
-              background: statusBg,
-              border: `1px solid ${statusBorder}`,
-              borderRadius: "20px",
-              padding: "3px 9px 3px 7px",
-              flexShrink: 0, // 👈 prevents badge from squishing
+              justifyContent: "space-between",
+              gap: "8px",
             }}
           >
-            <span
+            <p
               style={{
-                width: "6px",
-                height: "6px",
-                borderRadius: "50%",
-                background: statusColor,
+                fontSize: "12px",
+                fontWeight: 700,
+                color: "#0f172a",
+                letterSpacing: "-0.01em",
+                wordBreak: "break-all",
+                flex: 1,
+                whiteSpace: "normal",
+                minWidth: 0,
+              }}
+            >
+              {thingId}
+            </p>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                background: statusBg,
+                border: `1px solid ${statusBorder}`,
+                borderRadius: "20px",
+                padding: "3px 9px 3px 7px",
                 flexShrink: 0,
               }}
-            />
-            <span
-              style={{ fontSize: "10px", fontWeight: 600, color: statusColor }}
             >
-              {statusLabel}
-            </span>
+              <span
+                style={{
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "50%",
+                  background: statusColor,
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 600,
+                  color: statusColor,
+                }}
+              >
+                {statusLabel}
+              </span>
+            </div>
           </div>
         </div>
+
+        {/* Uptime / Downtime */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            borderBottom: "1px solid #f1f5f9",
+          }}
+        >
+          <div
+            style={{ padding: "8px 14px", borderRight: "1px solid #f1f5f9" }}
+          >
+            <p
+              style={{
+                fontSize: "9px",
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                color: "#94a3b8",
+                marginBottom: "3px",
+              }}
+            >
+              Uptime
+            </p>
+            <p
+              style={{
+                fontSize: "12px",
+                fontWeight: 700,
+                color: "#16a34a",
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {formatDuration(uptime)}
+            </p>
+          </div>
+          <div style={{ padding: "8px 14px" }}>
+            <p
+              style={{
+                fontSize: "9px",
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                color: "#94a3b8",
+                marginBottom: "3px",
+              }}
+            >
+              Downtime
+            </p>
+            <p
+              style={{
+                fontSize: "12px",
+                fontWeight: 700,
+                color: isOnline ? "#94a3b8" : statusColor,
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {isOnline ? "—" : formatDuration(down_time)}
+            </p>
+          </div>
+        </div>
+
+        {/* Info rows */}
+        <div style={{ padding: "8px 0" }}>
+          <Row
+            icon={<BatteryIcon />}
+            label="Battery Backup"
+            value={`${randomized.bb_hours} hrs`}
+            valueColor={
+              randomized.bb_hours >= 5
+                ? "#16a34a"
+                : randomized.bb_hours >= 3
+                  ? "#ea580c"
+                  : "#dc2626"
+            }
+          />
+          <Row
+            icon={<BoltIcon />}
+            label="EB Sanction Load"
+            value={`${randomized.eb_sanction_load} kW`}
+          />
+          <Row icon={<PinIcon />} label="ID / OD" value={randomized.id_od} />
+          <Row
+            icon={<DGIcon />}
+            label="DG Status"
+            value={randomized.dg}
+            valueColor={
+              randomized.dg === "Running"
+                ? "#0284c7"
+                : randomized.dg === "Standby"
+                  ? "#64748b"
+                  : "#dc2626"
+            }
+          />
+        </div>
       </div>
 
-      {/* Uptime / Downtime */}
+      {/* ── Right: vertical image strip ── */}
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          borderBottom: "1px solid #f1f5f9",
+          width: "90px", // 👈 wider than before (was 70px)
+          flexShrink: 0,
+          position: "relative",
+          overflow: "hidden",
+          borderLeft: "1px solid #f1f5f9",
         }}
       >
-        <div style={{ padding: "8px 14px", borderRight: "1px solid #f1f5f9" }}>
-          <p
-            style={{
-              fontSize: "9px",
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              color: "#94a3b8",
-              marginBottom: "3px",
-            }}
-          >
-            Uptime
-          </p>
-          <p
-            style={{
-              fontSize: "12px",
-              fontWeight: 700,
-              color: "#16a34a",
-              fontVariantNumeric: "tabular-nums",
-            }}
-          >
-            {formatDuration(uptime)}
-          </p>
-        </div>
-        <div style={{ padding: "8px 14px" }}>
-          <p
-            style={{
-              fontSize: "9px",
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              color: "#94a3b8",
-              marginBottom: "3px",
-            }}
-          >
-            Downtime
-          </p>
-          <p
-            style={{
-              fontSize: "12px",
-              fontWeight: 700,
-              color: isOnline ? "#94a3b8" : statusColor,
-              fontVariantNumeric: "tabular-nums",
-            }}
-          >
-            {isOnline ? "—" : formatDuration(down_time)}
-          </p>
-        </div>
-      </div>
-
-      {/* Info rows — matches the sidebar's "Label: Value" pattern */}
-      <div style={{ padding: "8px 0" }}>
-        <Row
-          icon={<BatteryIcon />}
-          label="Battery Backup"
-          value={`${randomized.bb_hours} hrs`}
-          valueColor={
-            randomized.bb_hours >= 5
-              ? "#16a34a"
-              : randomized.bb_hours >= 3
-                ? "#ea580c"
-                : "#dc2626"
-          }
+        <img
+          src={resolvedImage}
+          alt="Tower"
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            display: "block",
+          }}
         />
-        <Row
-          icon={<BoltIcon />}
-          label="EB Sanction Load"
-          value={`${randomized.eb_sanction_load} kW`}
-        />
-        <Row icon={<PinIcon />} label="ID / OD" value={randomized.id_od} />
-        <Row
-          icon={<DGIcon />}
-          label="DG Status"
-          value={randomized.dg}
-          valueColor={
-            randomized.dg === "Running"
-              ? "#0284c7"
-              : randomized.dg === "Standby"
-                ? "#64748b"
-                : "#dc2626"
-          }
+        {/* Left-edge fade so it blends into the data block */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(to right, rgba(255,255,255,0.18) 0%, transparent 40%)",
+          }}
         />
       </div>
     </div>

@@ -160,6 +160,7 @@ const TowerMap = () => {
                 thingId={tower.thingId}
                 down_time={tower.attributes.down_time}
                 uptime={tower.attributes.uptime}
+                imageUrl="/images/image.png"
               />
             </Tooltip>
             <Popup className="w-[450px] h-[450px]">
