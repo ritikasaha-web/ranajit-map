@@ -11,6 +11,7 @@ import {
 import { useTower } from "../hooks/getTowers";
 import { useTowerStore } from "../store/useTowerStore";
 import { IoChevronDown } from "react-icons/io5";
+import SiteUploadPhotos from "@/app/components/common/SiteUploadPhotos";
 
 /* ── Simple accordion used only in features ── */
 const Accordion = ({
@@ -46,6 +47,7 @@ const twinOverview = () => {
   const router = useRouter();
   const selectedTowerId = useTowerStore((s) => s.selectedTowerId);
   const { data: selectedTower } = useTower(selectedTowerId ?? undefined);
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   if (!selectedTower) {
     return (
@@ -176,11 +178,25 @@ const twinOverview = () => {
   return (
     <div className="w-[30%] h-screen border-2 border-sky-400 bg-sky-50 text-slate-800 flex flex-col">
       {/* Header */}
-      <div className="h-[10%] flex items-center justify-center border-b-2 border-sky-400 bg-white/90">
+
+      {/* <button onClick={() => setUploadOpen(true)}>Upload Photos</button>
+      {uploadOpen && <SiteUploadPhotos onClose={() => setUploadOpen(false)} />} */}
+      <div className="h-[10%] relative flex items-center justify-center border-b-2 border-sky-400 bg-white/90">
+        {/* Centered Title */}
         <h1 className="text-lg font-semibold tracking-wide">
           {thingId ? thingId : "Tower Name"}
         </h1>
+
+        {/* Right Button */}
+        <button
+          onClick={() => setUploadOpen(true)}
+          className="absolute right-4 text-xs font-semibold px-3 py-1.5 rounded-full bg-sky-500 text-white hover:bg-sky-600 transition shadow-sm"
+        >
+          Upload
+        </button>
       </div>
+
+      {uploadOpen && <SiteUploadPhotos onClose={() => setUploadOpen(false)} />}
 
       {/* Attributes */}
       <div className="h-[40%] p-4 overflow-y-auto border-b-2 border-sky-400 bg-white/70">
