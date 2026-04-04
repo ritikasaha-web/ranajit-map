@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
 
   const dir = path.join(
     process.cwd(),
-    "public",
+    "uploads",
     "site_image",
     siteId || "default",
   );
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
     await writeFile(path.join(dir, filename), buffer);
 
-    urls.push(`/site_image/${siteId}/${filename}`); // ✅ now works
+    urls.push(`/api/get_images_names?siteId=${siteId}&file=${filename}`);
   }
 
   return NextResponse.json({ urls });

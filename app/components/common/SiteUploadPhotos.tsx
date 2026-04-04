@@ -69,6 +69,9 @@ const SiteUploadPhotos = ({ onClose }: { onClose: () => void }) => {
       const res = await fetch("http://localhost:3000/api/upload_image", {
         method: "POST",
         body: form,
+        headers: {
+          Authorization: "Basic " + btoa("ditto:ditto"), // ✅ replace with real credentials
+        },
       });
 
       if (!res.ok) throw new Error();
