@@ -4,11 +4,13 @@ import React, { useState, useRef } from "react";
 import { RxCross2 } from "react-icons/rx";
 import { useTowerStore } from "@/app/store/useTowerStore";
 import { useTower } from "@/app/hooks/getTowers";
+import { createPortal } from "react-dom";
 
 type Preview = { file: File; objectUrl: string };
 
 const toFolder = (thingId: string) =>
   thingId.includes(":") ? thingId.split(":").pop()! : thingId;
+const MAX_FILES = 5;
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -30,16 +32,31 @@ const SiteUploadPhotos = ({ onClose }: { onClose: () => void }) => {
 
   const addFiles = (incoming: FileList | null) => {
     if (!incoming) return;
+
     const valid = Array.from(incoming).filter((f) => ALLOWED.includes(f.type));
+
     if (!valid.length) {
       setError("Only JPG, PNG, WEBP or GIF allowed.");
       return;
     }
+
+    // ✅ enforce max limit
+    const totalCount = images.length + previews.length + valid.length;
+
+    if (totalCount > MAX_FILES) {
+      setError(`Maximum ${MAX_FILES} photos allowed per site.`);
+      return;
+    }
+
     setError(null);
     setDone(false);
+
     setPreviews((prev) => [
       ...prev,
-      ...valid.map((file) => ({ file, objectUrl: URL.createObjectURL(file) })),
+      ...valid.map((file) => ({
+        file,
+        objectUrl: URL.createObjectURL(file),
+      })),
     ]);
   };
 
@@ -89,7 +106,7 @@ const SiteUploadPhotos = ({ onClose }: { onClose: () => void }) => {
     }
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="relative flex flex-col w-[560px] max-h-[88vh] rounded-3xl bg-white shadow-2xl overflow-hidden">
         {/* ── Header ── */}
@@ -148,7 +165,9 @@ const SiteUploadPhotos = ({ onClose }: { onClose: () => void }) => {
             <p className="text-sm font-medium text-slate-500">
               {dragOver ? "Drop images here" : "Click or drag images here"}
             </p>
-            <p className="text-xs text-slate-400">JPG · PNG · WEBP · GIF</p>
+            <p className="text-xs text-slate-400">
+              JPG · PNG · WEBP · GIF · Max 5 Images
+            </p>
             <input
               ref={inputRef}
               type="file"
@@ -184,9 +203,9 @@ const SiteUploadPhotos = ({ onClose }: { onClose: () => void }) => {
               >
                 <polyline points="20 6 9 17 4 12" />
               </svg>
-              Images uploaded successfully to{" "}
+              Images uploaded successfully for site{" "}
               <code className="bg-green-100 px-1.5 py-0.5 rounded">
-                /site_images/{folder}/
+                {thingId}
               </code>
             </div>
           )}
@@ -292,7 +311,8 @@ const SiteUploadPhotos = ({ onClose }: { onClose: () => void }) => {
 
         <div className="h-[3px] bg-gradient-to-r from-sky-500 to-blue-400 shrink-0" />
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 

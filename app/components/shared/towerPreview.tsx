@@ -8,6 +8,7 @@ import {
   formatLabel,
 } from "@/app/constants/component_names";
 import { BsFullscreen } from "react-icons/bs";
+import { FiUpload } from "react-icons/fi";
 import {
   useExpandTowerStore,
   useSitePhotosStore,
@@ -20,6 +21,7 @@ import {
   generateTowerImage,
   prefetchLayers,
 } from "@/app/constants/component_names"; // ← shared with expandTowerPreview
+import SiteUploadPhotos from "../common/SiteUploadPhotos";
 
 /* ── Types ──────────────────────────────────────────────────── */
 
@@ -57,6 +59,7 @@ const TowerPreview = ({
   uptime,
 }: TowerPreviewProps) => {
   const [finalImage, setFinalImage] = useState<string | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   const setExpandState = useExpandTowerStore((s) => s.setOpenExpandTower);
   const setSitePhotosOpen = useSitePhotosStore((s) => s.setSitePhotosOpen);
@@ -169,30 +172,46 @@ const TowerPreview = ({
     <div className="w-full h-full bg-white rounded-lg p-2 flex flex-col gap-3">
       {/* ── Image Section ── */}
       <div className="relative w-full h-[320px] bg-white rounded-md border border-slate-300 overflow-hidden flex items-center justify-center">
-        {/* Expand View */}
-        <div className="group absolute top-2 right-2 z-30">
-          <button
-            onClick={() => setExpandState(true)}
-            className="cursor-pointer rounded-full p-1.5 bg-transparent duration-200 border border-slate-300 text-slate-600 hover:bg-slate-100"
-          >
-            <BsFullscreen size={16} />
-          </button>
-          <span className="pointer-events-none absolute right-full mr-2 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-800 text-white text-[10px] font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-            Expand View
-          </span>
-        </div>
+        {/* ── Action Buttons (top-right) ── */}
+        <div className="absolute top-2 right-2 z-30 flex flex-col gap-1.5">
+          {/* Expand View */}
+          <div className="group relative">
+            <button
+              onClick={() => setExpandState(true)}
+              className="cursor-pointer rounded-full p-1.5 bg-white/80 backdrop-blur-sm border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors duration-200"
+            >
+              <BsFullscreen size={16} />
+            </button>
+            <span className="pointer-events-none absolute right-full mr-2 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-800 text-white text-[10px] font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+              Expand View
+            </span>
+          </div>
 
-        {/* Site Photos */}
-        <div className="group absolute top-10 right-2 z-30">
-          <button
-            onClick={() => setSitePhotosOpen(true)}
-            className="cursor-pointer rounded-full p-1.5 bg-transparent duration-200 border border-slate-300 text-slate-600 hover:bg-slate-100"
-          >
-            <GrGallery size={16} />
-          </button>
-          <span className="pointer-events-none absolute right-full mr-2 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-800 text-white text-[10px] font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-            Site Photos
-          </span>
+          {/* Site Photos */}
+          <div className="group relative">
+            <button
+              onClick={() => setSitePhotosOpen(true)}
+              className="cursor-pointer rounded-full p-1.5 bg-white/80 backdrop-blur-sm border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors duration-200"
+            >
+              <GrGallery size={16} />
+            </button>
+            <span className="pointer-events-none absolute right-full mr-2 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-800 text-white text-[10px] font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+              Site Photos
+            </span>
+          </div>
+
+          {/* Upload Images */}
+          <div className="group relative">
+            <button
+              onClick={() => setUploadOpen(true)}
+              className="cursor-pointer rounded-full p-1.5 bg-white/80 backdrop-blur-sm border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors duration-200"
+            >
+              <FiUpload size={16} />
+            </button>
+            <span className="pointer-events-none absolute right-full mr-2 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-800 text-white text-[10px] font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+              Upload Images
+            </span>
+          </div>
         </div>
 
         {finalImage && (
@@ -245,6 +264,7 @@ const TowerPreview = ({
           ))}
         </div>
       </div>
+      {uploadOpen && <SiteUploadPhotos onClose={() => setUploadOpen(false)} />}
     </div>
   );
 };

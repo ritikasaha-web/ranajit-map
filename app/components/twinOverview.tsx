@@ -188,12 +188,12 @@ const twinOverview = () => {
         </h1>
 
         {/* Right Button */}
-        <button
+        {/* <button
           onClick={() => setUploadOpen(true)}
           className="absolute right-4 text-xs font-semibold px-3 py-1.5 rounded-full bg-sky-500 text-white hover:bg-sky-600 transition shadow-sm"
         >
           Upload
-        </button>
+        </button> */}
       </div>
 
       {uploadOpen && <SiteUploadPhotos onClose={() => setUploadOpen(false)} />}
