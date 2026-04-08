@@ -3,6 +3,7 @@ import { RxCross2 } from "react-icons/rx";
 import { useSitePhotosStore } from "@/app/store/useTowerStore";
 import { useTowerStore } from "@/app/store/useTowerStore";
 import { useTower } from "@/app/hooks/getTowers";
+import { getMappedSiteImages } from "@/app/api/endpoints";
 
 type Photo = { id: number; label: string; url: string };
 
@@ -32,20 +33,8 @@ const SitePhotos = () => {
       setSelectedIndex(0);
 
       try {
-        const res = await fetch(
-          `http://localhost:3000/api/get_images_names?siteId=${toFolder(thingId)}`,
-        );
-
-        const data = await res.json();
-
-        // convert to your Photo format
-        const mapped: Photo[] = data.urls.map((url: string, i: number) => ({
-          id: i + 1,
-          label: `Site Image ${i + 1}`,
-          url,
-        }));
-
-        setPhotos(mapped);
+        const photos = await getMappedSiteImages(thingId);
+        setPhotos(photos);
       } catch {
         setPhotos([]);
       } finally {

@@ -145,7 +145,7 @@ const TowerMap = () => {
                     iconAnchor: [20, 40],
                     popupAnchor: [0, -40],
                   })
-            } // 👈 SWITCH HERE
+            }
             eventHandlers={{
               click: () => setSelectedTowerId(tower.thingId),
             }}

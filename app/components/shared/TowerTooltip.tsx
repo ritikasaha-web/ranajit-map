@@ -1,4 +1,5 @@
-import React, { useMemo } from "react";
+import { getMappedSiteImages } from "@/app/api/endpoints";
+import React, { useEffect, useMemo, useState } from "react";
 
 interface TowerTooltipProps {
   thingId: string;
@@ -29,6 +30,26 @@ const TowerTooltip = ({
   dg,
   imageUrl,
 }: TowerTooltipProps) => {
+  const [image, setImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const photos = await getMappedSiteImages(thingId);
+
+        if (photos.length) {
+          const random = photos[Math.floor(Math.random() * photos.length)];
+
+          setImage(random.url);
+        }
+      } catch {
+        setImage(null);
+      }
+    };
+
+    load();
+  }, [thingId]);
+
   const randomized = useMemo(
     () => ({
       bb_hours:
@@ -59,7 +80,7 @@ const TowerTooltip = ({
       style={{
         display: "flex",
         flexDirection: "row",
-        width: "340px",
+        width: "400px",
         minWidth: "340px",
         background: "#ffffff",
         borderRadius: "10px",
@@ -254,33 +275,39 @@ const TowerTooltip = ({
         </div>
       </div>
 
-      {/* ── Right: vertical image strip ── */}
+      {/* ── Right: larger image strip ── */}
       <div
         style={{
-          width: "90px", // 👈 wider than before (was 70px)
+          width: "130px", // ⬅️ increased from 110 → 130
           flexShrink: 0,
           position: "relative",
-          overflow: "hidden",
           borderLeft: "1px solid #f1f5f9",
+          background: "#f8fafc",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "4px", // ⬅️ slightly reduced padding
         }}
       >
         <img
-          src={resolvedImage}
+          src={image || "images/image.png"}
           alt="Tower"
           style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            display: "block",
+            maxWidth: "100%",
+            maxHeight: "100%",
+            objectFit: "contain",
+            borderRadius: "6px",
           }}
         />
-        {/* Left-edge fade so it blends into the data block */}
+
+        {/* subtle fade */}
         <div
           style={{
             position: "absolute",
             inset: 0,
             background:
-              "linear-gradient(to right, rgba(255,255,255,0.18) 0%, transparent 40%)",
+              "linear-gradient(to right, rgba(255,255,255,0.10) 0%, transparent 55%)",
+            pointerEvents: "none",
           }}
         />
       </div>

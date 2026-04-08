@@ -5,6 +5,7 @@ import { RxCross2 } from "react-icons/rx";
 import { useTowerStore } from "@/app/store/useTowerStore";
 import { useTower } from "@/app/hooks/getTowers";
 import { createPortal } from "react-dom";
+import { uploadSiteImages } from "@/app/api/endpoints";
 
 type Preview = { file: File; objectUrl: string };
 
@@ -79,22 +80,12 @@ const SiteUploadPhotos = ({ onClose }: { onClose: () => void }) => {
     setError(null);
 
     try {
-      const form = new FormData();
-      form.append("siteId", folder);
-      previews.forEach(({ file }) => form.append("images", file));
+      const data = await uploadSiteImages(
+        folder,
+        previews.map((p) => p.file),
+      );
 
-      const res = await fetch("http://localhost:3000/api/upload_image", {
-        method: "POST",
-        body: form,
-        headers: {
-          Authorization: "Basic " + btoa("ditto:ditto"), // ✅ replace with real credentials
-        },
-      });
-
-      if (!res.ok) throw new Error();
-
-      const data = await res.json(); // ✅ IMPORTANT
-      setImages((prev) => [...prev, ...data.urls]); // ✅ append images
+      setImages((prev) => [...prev, ...data.urls]);
 
       previews.forEach((p) => URL.revokeObjectURL(p.objectUrl));
       setPreviews([]);
