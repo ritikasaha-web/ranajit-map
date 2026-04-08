@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { RxCross2 } from "react-icons/rx";
 import { useTowerStore } from "@/app/store/useTowerStore";
 import { useTower } from "@/app/hooks/getTowers";
@@ -18,6 +19,7 @@ const MAX_FILES = 5;
 const SiteUploadPhotos = ({ onClose }: { onClose: () => void }) => {
   const [images, setImages] = useState<string[]>([]);
   const { data: currTower } = useTower(useTowerStore((s) => s.selectedTowerId));
+  const queryClient = useQueryClient();
 
   const [previews, setPreviews] = useState<Preview[]>([]);
   const [dragOver, setDragOver] = useState(false);
@@ -90,6 +92,8 @@ const SiteUploadPhotos = ({ onClose }: { onClose: () => void }) => {
       previews.forEach((p) => URL.revokeObjectURL(p.objectUrl));
       setPreviews([]);
       setDone(true);
+
+      await queryClient.invalidateQueries({ queryKey: ["siteImages", thingId] });
     } catch {
       setError("Upload failed. Please try again.");
     } finally {

@@ -1,5 +1,6 @@
 import { getMappedSiteImages } from "@/app/api/endpoints";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 interface TowerTooltipProps {
   thingId: string;
@@ -20,6 +21,9 @@ const formatDuration = (minutes: number): string => {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 };
 
+const bustUrl = (url: string, cb: number) =>
+  url.includes("?") ? `${url}&cb=${cb}` : `${url}?cb=${cb}`;
+
 const TowerTooltip = ({
   thingId,
   down_time,
@@ -30,25 +34,30 @@ const TowerTooltip = ({
   dg,
   imageUrl,
 }: TowerTooltipProps) => {
-  const [image, setImage] = useState<string | null>(null);
+  const randomIndexRef = useRef<number | null>(null);
+  const prevThingIdRef = useRef<string>("");
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const photos = await getMappedSiteImages(thingId);
+  // Reset stable random index whenever thingId changes
+  if (prevThingIdRef.current !== thingId) {
+    prevThingIdRef.current = thingId;
+    randomIndexRef.current = null;
+  }
 
-        if (photos.length) {
-          const random = photos[Math.floor(Math.random() * photos.length)];
+  const { data: photos = [], dataUpdatedAt } = useQuery({
+    queryKey: ["siteImages", thingId],
+    queryFn: () => getMappedSiteImages(thingId),
+    enabled: !!thingId,
+  });
 
-          setImage(random.url);
-        }
-      } catch {
-        setImage(null);
-      }
-    };
-
-    load();
-  }, [thingId]);
+  // Pick random image once per thingId; reuse on re-renders
+  const image = useMemo(() => {
+    if (!photos.length) return null;
+    if (randomIndexRef.current === null || randomIndexRef.current >= photos.length) {
+      randomIndexRef.current = Math.floor(Math.random() * photos.length);
+    }
+    const url = photos[randomIndexRef.current].url;
+    return bustUrl(url, dataUpdatedAt);
+  }, [photos, dataUpdatedAt]);
 
   const randomized = useMemo(
     () => ({

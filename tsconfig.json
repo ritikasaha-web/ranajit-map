@@ -30,6 +30,6 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts",
     "app/hooks"
-  ],
+, "../other/features.tsx"  ],
   "exclude": ["node_modules"]
 }

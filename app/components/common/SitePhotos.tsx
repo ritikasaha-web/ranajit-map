@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { RxCross2 } from "react-icons/rx";
 import { useSitePhotosStore } from "@/app/store/useTowerStore";
 import { useTowerStore } from "@/app/store/useTowerStore";
@@ -7,43 +8,38 @@ import { getMappedSiteImages } from "@/app/api/endpoints";
 
 type Photo = { id: number; label: string; url: string };
 
-const EXTS = ["png", "jpg", "jpeg", "webp"];
-const MAX = 5;
-
-const toFolder = (thingId: string) =>
-  thingId.includes(":") ? thingId.split(":").pop()! : thingId;
+const bustUrl = (url: string, cb: number) =>
+  url.includes("?") ? `${url}&cb=${cb}` : `${url}?cb=${cb}`;
 
 const SitePhotos = () => {
   const setSitePhotosOpen = useSitePhotosStore((s) => s.setSitePhotosOpen);
   const { data: currTower } = useTower(useTowerStore((s) => s.selectedTowerId));
 
-  const [photos, setPhotos] = useState<Photo[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
 
   const thingId = currTower?.thingId ?? "";
-  const selected = photos[selectedIndex];
 
+  const {
+    data: photos = [],
+    isLoading: loading,
+    dataUpdatedAt,
+  } = useQuery({
+    queryKey: ["siteImages", thingId],
+    queryFn: () => getMappedSiteImages(thingId),
+    enabled: !!thingId,
+  });
+
+  // Reset selected index when thingId changes
   useEffect(() => {
-    if (!thingId) return;
-
-    const loadImages = async () => {
-      setLoading(true);
-      setPhotos([]);
-      setSelectedIndex(0);
-
-      try {
-        const photos = await getMappedSiteImages(thingId);
-        setPhotos(photos);
-      } catch {
-        setPhotos([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadImages();
+    setSelectedIndex(0);
   }, [thingId]);
+
+  const selected = photos[selectedIndex]
+    ? {
+        ...photos[selectedIndex],
+        url: bustUrl(photos[selectedIndex].url, dataUpdatedAt),
+      }
+    : undefined;
 
   const prev = () =>
     setSelectedIndex((i) => (i - 1 + photos.length) % photos.length);
@@ -134,8 +130,8 @@ const SitePhotos = () => {
               /* ── Main photo ── */
               <div className="relative flex-1 rounded-2xl overflow-hidden bg-slate-50 border border-slate-200 flex items-center justify-center">
                 <img
-                  src={selected.url}
-                  alt={selected.label}
+                  src={selected?.url ?? ""}
+                  alt={selected?.label ?? ""}
                   className="max-w-full max-h-full object-contain"
                 />
 
@@ -177,14 +173,14 @@ const SitePhotos = () => {
 
                 {/* ── Label (bottom-left) ── */}
                 <div className="absolute bottom-3 left-3 bg-white/80 backdrop-blur-sm text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-full border border-slate-200 shadow-sm">
-                  {selected.label}
+                  {selected?.label ?? ""}
                 </div>
 
                 {/* ── Download (bottom-right) ── */}
                 <div className="group absolute bottom-3 right-3 rounded-full p-2 bg-white/80 backdrop-blur-sm border border-slate-200 shadow-sm text-slate-600 hover:bg-white hover:text-slate-900 transition">
                   <a
-                    href={selected.url}
-                    download={selected.label}
+                    href={selected?.url ?? "#"}
+                    download={selected?.label ?? ""}
                     target="_blank"
                     rel="noopener noreferrer"
                     className=""
@@ -233,7 +229,7 @@ const SitePhotos = () => {
                   }`}
                 >
                   <img
-                    src={photo.url}
+                    src={bustUrl(photo.url, dataUpdatedAt)}
                     alt={photo.label}
                     className="w-full h-full object-cover"
                   />
