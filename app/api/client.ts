@@ -13,6 +13,7 @@ export const api_backend = axios.create({
 });
 export const api_for_images = axios.create({
   baseURL: "http://localhost:3000/api",
+  // baseURL: "http://138.201.137.244:3000/api",
 
   timeout: 30000,
   headers: {
