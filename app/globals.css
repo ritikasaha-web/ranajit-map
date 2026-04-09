@@ -135,3 +135,103 @@ body {
 .tower-tooltip-override::before {
   display: none !important;
 }
+/* --- Paste this at the bottom of globals.css --- */
+
+/* The outer, semi-transparent ring */
+.leaflet-container .marker-cluster {
+  background-clip: padding-box !important;
+  border-radius: 50% !important;
+  transition: transform 0.2s ease-in-out;
+}
+
+.leaflet-container .marker-cluster:hover {
+  transform: scale(1.1);
+}
+
+/* Outer ring colors */
+.leaflet-container .marker-cluster-small {
+  background-color: rgba(34, 197, 94, 0.4) !important;
+}
+.leaflet-container .marker-cluster-medium {
+  background-color: rgba(245, 158, 11, 0.4) !important;
+}
+.leaflet-container .marker-cluster-large {
+  background-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+/* The inner, solid circle holding the text */
+.leaflet-container .marker-cluster div {
+  width: 30px !important;
+  height: 30px !important;
+  margin-left: 5px !important;
+  margin-top: 5px !important;
+  border-radius: 50% !important;
+  color: white !important;
+  font-family: inherit !important;
+  font-weight: bold !important;
+  font-size: 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Inner circle colors */
+.leaflet-container .marker-cluster-small div {
+  background-color: rgba(34, 197, 94, 0.95) !important;
+}
+.leaflet-container .marker-cluster-medium div {
+  background-color: rgba(245, 158, 11, 0.95) !important;
+}
+.leaflet-container .marker-cluster-large div {
+  background-color: rgba(239, 68, 68, 0.95) !important;
+}
+/* --- Add this to your globals.css --- */
+
+/* 1. Fluid timing curve and GPU hardware acceleration */
+.leaflet-cluster-anim .leaflet-marker-icon,
+.leaflet-cluster-anim .leaflet-marker-shadow {
+  /* cubic-bezier gives it a natural "ease-out" physics feel */
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s ease-in !important;
+
+  /* Forces the browser to use the GPU for these elements */
+  will-change: transform, opacity !important;
+}
+
+.leaflet-cluster-spider-leg {
+  transition:
+    stroke-dashoffset 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    stroke-opacity 0.3s ease-in !important;
+  will-change: stroke-dashoffset, stroke-opacity !important;
+}
+/* --- globals.css --- */
+
+/* 1. Hide every single marker icon by default when it enters the map */
+.leaflet-marker-pane .leaflet-marker-icon {
+  display: none !important;
+}
+
+/* 2. ONLY show the marker icon if it has been processed and is NOT a cluster 
+   Leaflet adds 'leaflet-zoom-animated' to active, processed markers.
+   We also check that it doesn't have the 'marker-cluster' class.
+*/
+.leaflet-marker-pane
+  .leaflet-marker-icon.leaflet-zoom-animated:not(.marker-cluster) {
+  display: block !important;
+  animation: simpleFade 0.2s ease-in;
+}
+
+/* 3. Always ensure clusters themselves are visible */
+.leaflet-marker-pane .marker-cluster {
+  display: block !important;
+}
+
+@keyframes simpleFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

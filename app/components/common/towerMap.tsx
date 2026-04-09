@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
+import MarkerClusterGroup from "react-leaflet-cluster";
 import {
   MapContainer,
   TileLayer,
@@ -66,21 +67,46 @@ const TowerMap = () => {
   const [zoom, setZoom] = useState(5);
 
   useEffect(() => {
+    // 1. Flag to prevent React Strict Mode from breaking things
+    let isMounted = true;
+
     (async () => {
       try {
-        const data = await getTwins();
-        const seen = new Set();
-        const unique = (Array.isArray(data) ? data : []).filter((t: any) => {
-          if (seen.has(t.thingId)) return false;
-          seen.add(t.thingId);
-          return true;
+        await getTwins((newBatch) => {
+          // If the component unmounted (e.g., Strict Mode cleanup), ignore this batch
+          if (!isMounted) return;
+
+          // 2. Deduplicate directly against the REAL state
+          setTowers((prevTowers) => {
+            // Get all the IDs currently on the map
+            const existingIds = new Set(prevTowers.map((t) => t.thingId));
+
+            // Filter the incoming batch
+            const uniqueNewTowers = newBatch.filter((t: any) => {
+              if (existingIds.has(t.thingId)) {
+                return false; // Skip it! We already have it.
+              }
+              // Add it to the set so we also catch duplicates hiding within the same batch
+              existingIds.add(t.thingId);
+              return true;
+            });
+
+            // If nothing new survived the filter, don't update the state
+            if (uniqueNewTowers.length === 0) return prevTowers;
+
+            // Safely combine them
+            return [...prevTowers, ...uniqueNewTowers];
+          });
         });
-        setTowers(unique); // ✅ only this
       } catch (err) {
         console.error("Error fetching towers:", err);
-        setTowers([]);
       }
     })();
+
+    // 3. Cleanup function for Strict Mode
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const positions = useMemo(() => {
@@ -126,6 +152,16 @@ const TowerMap = () => {
         <FitMarkersBounds positions={positions} />
 
         {/* --- All Towers --- */}
+        {/* <MarkerClusterGroup
+          chunkedLoading={true}
+          animate={true}
+          // This is the key: it prevents markers from rendering if they aren't in view
+          removeOutsideVisibleBounds={true}
+          // Disable the adding animation which often causes the "ghost" marker trail
+          animateAddingMarkers={false}
+          // Ensure the engine starts grouping immediately
+          zoomToBoundsOnClick={true}
+        > */}
         {towers.map((tower: any) => (
           <Marker
             key={tower.thingId}
@@ -144,6 +180,7 @@ const TowerMap = () => {
                     ],
                     iconAnchor: [20, 40],
                     popupAnchor: [0, -40],
+                    className: "fade-in-marker", // <-- ADD THIS
                   })
             }
             eventHandlers={{
@@ -185,6 +222,7 @@ const TowerMap = () => {
             </Popup>
           </Marker>
         ))}
+        {/* </MarkerClusterGroup> */}
       </MapContainer>
       <MapLegend />
     </div>
