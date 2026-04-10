@@ -1,26 +1,21 @@
-"use client";
-import React, { useState } from "react";
+// app/layout.tsx
+import React from "react";
 import "./globals.css";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import Providers from "./providers"; // Import the newly created provider
 import { Toaster } from "@/components/ui/sonner";
+
+// Now your layout safely supports Next.js metadata!
+export const metadata = {
+  title: "Digital Twin - Codez",
+  description:
+    "Tower vision application for monitoring and managing tower sites",
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            staleTime: 5 * 60 * 1000, // 5 min cache
-            retry: 1,
-            refetchOnWindowFocus: false,
-          },
-        },
-      }),
-  );
   return (
     <html lang="en">
       <head>
@@ -32,9 +27,8 @@ export default function RootLayout({
       </head>
       <body>
         <main>
-          <QueryClientProvider client={queryClient}>
-            {children}
-          </QueryClientProvider>
+          {/* The Providers component wraps your application here */}
+          <Providers>{children}</Providers>
         </main>
         <Toaster />
       </body>

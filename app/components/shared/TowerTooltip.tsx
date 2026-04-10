@@ -49,10 +49,21 @@ const TowerTooltip = ({
     enabled: !!thingId,
   });
 
-  // Pick random image once per thingId; reuse on re-renders
+  // ✅ UPDATED LOGIC: Prioritize Default Image, fallback to Random
   const image = useMemo(() => {
     if (!photos.length) return null;
-    if (randomIndexRef.current === null || randomIndexRef.current >= photos.length) {
+
+    // 1. Look for a user-selected default image
+    const defaultPhoto = photos.find((p: any) => p.default === true);
+    if (defaultPhoto) {
+      return bustUrl(defaultPhoto.url, dataUpdatedAt);
+    }
+
+    // 2. If no default exists, run the random selection
+    if (
+      randomIndexRef.current === null ||
+      randomIndexRef.current >= photos.length
+    ) {
       randomIndexRef.current = Math.floor(Math.random() * photos.length);
     }
     const url = photos[randomIndexRef.current].url;
@@ -81,8 +92,6 @@ const TowerTooltip = ({
   const statusColor = isOnline ? "#16a34a" : isSevere ? "#dc2626" : "#ea580c";
   const statusBg = isOnline ? "#f0fdf4" : isSevere ? "#fef2f2" : "#fff7ed";
   const statusBorder = isOnline ? "#bbf7d0" : isSevere ? "#fecaca" : "#fed7aa";
-
-  const resolvedImage = imageUrl ?? "https://placehold.co/90x240?text=Tower";
 
   return (
     <div

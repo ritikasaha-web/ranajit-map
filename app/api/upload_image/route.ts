@@ -101,7 +101,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir, unlink } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
-import { api_backend } from "../client";
+import { api } from "../client";
 
 export async function POST(req: NextRequest) {
   try {
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
     // 1. Fetch current images from Ditto
     let images: any[] = [];
     try {
-      const response = await api_backend.get(attrPath, {
+      const response = await api.get(attrPath, {
         baseURL: "http://138.201.137.244:5500/api/2/",
       });
       images = response.data || [];
@@ -205,7 +205,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 5. Update Ditto with the final clean array
-    await api_backend.put(attrPath, images);
+    await api.put(attrPath, images);
 
     // Translate the raw paths to the API routes so the frontend can load them immediately
     const formattedUrls = newEntries.map((e) => {

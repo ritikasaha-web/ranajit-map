@@ -7,6 +7,7 @@ import { useTowerStore } from "@/app/store/useTowerStore";
 import { useTower } from "@/app/hooks/getTowers";
 import { createPortal } from "react-dom";
 import { uploadSiteImages } from "@/app/api/endpoints";
+import { compressImage } from "@/app/constants/component_names";
 
 type Preview = { file: File; objectUrl: string };
 
@@ -82,10 +83,14 @@ const SiteUploadPhotos = ({ onClose }: { onClose: () => void }) => {
     setError(null);
 
     try {
-      const data = await uploadSiteImages(
-        folder,
-        previews.map((p) => p.file),
+      // 1. Compress all images concurrently before sending
+      const compressedFiles = await Promise.all(
+        previews.map((p) => compressImage(p.file, 1280, 0.7)),
+        // 1280px max-width and 70% quality will drastically reduce file size
       );
+
+      // 2. Send the compressed files to your API
+      const data = await uploadSiteImages(folder, compressedFiles);
 
       setImages((prev) => [...prev, ...data.urls]);
 
@@ -93,7 +98,9 @@ const SiteUploadPhotos = ({ onClose }: { onClose: () => void }) => {
       setPreviews([]);
       setDone(true);
 
-      await queryClient.invalidateQueries({ queryKey: ["siteImages", thingId] });
+      await queryClient.invalidateQueries({
+        queryKey: ["siteImages", thingId],
+      });
     } catch {
       setError("Upload failed. Please try again.");
     } finally {
@@ -161,7 +168,7 @@ const SiteUploadPhotos = ({ onClose }: { onClose: () => void }) => {
               {dragOver ? "Drop images here" : "Click or drag images here"}
             </p>
             <p className="text-xs text-slate-400">
-              JPG · PNG · WEBP · GIF · Max 5 Images
+              JPG · PNG · WEBP · Max 5 Images
             </p>
             <input
               ref={inputRef}
@@ -265,14 +272,14 @@ const SiteUploadPhotos = ({ onClose }: { onClose: () => void }) => {
           <div className="flex gap-2">
             <button
               onClick={onClose}
-              className="text-xs text-slate-500 px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 transition"
+              className="text-xs cursor-pointer text-slate-500 px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 transition"
             >
               Cancel
             </button>
             <button
               onClick={upload}
               disabled={!previews.length || uploading}
-              className="text-xs font-semibold text-white px-5 py-2 rounded-full bg-sky-500 hover:bg-sky-600 disabled:opacity-40 transition flex items-center gap-1.5"
+              className="text-xs cursor-pointer font-semibold text-white px-5 py-2 rounded-full bg-sky-500 hover:bg-sky-600 disabled:opacity-40 transition flex items-center gap-1.5"
             >
               {uploading ? (
                 <>

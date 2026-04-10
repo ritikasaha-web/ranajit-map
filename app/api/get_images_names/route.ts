@@ -60,7 +60,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import path from "path";
-import { api_backend } from "../client"; // Ensure this matches your file path
+import { api } from "../client"; // Ensure this matches your file path
 
 const mimeTypes: Record<string, string> = {
   ".jpg": "image/jpeg",
@@ -111,20 +111,27 @@ export async function GET(req: NextRequest) {
     const attrPath = `things/${thingId}/attributes/images`;
 
     // Force absolute URL for server-side Axios request
-    const response = await api_backend.get(attrPath, {
+    const response = await api.get(attrPath, {
       baseURL: "http://138.201.137.244:5500/api/2/",
     });
 
     const images = response.data || [];
 
-    // Translate the Ditto stored paths back to the URL format the frontend expects
-    const urls = images.map((img: any) => {
-      // Extracts just "filename.jpg" from "/uploads/site_image/123/filename.jpg"
+    // Translate the Ditto stored paths and KEEP the default flag
+    const formattedImages = images.map((img: any) => {
       const filename = img.url.split("/").pop();
-      return `/api/get_images_names?siteId=${siteId}&file=${filename}`;
+      return {
+        url: `/api/get_images_names?siteId=${siteId}&file=${filename}`,
+        default: img.default === true,
+      };
     });
 
-    return NextResponse.json({ urls });
+    // We return BOTH 'urls' (so your Upload component doesn't break)
+    // AND 'images' (so your Gallery knows which is default)
+    return NextResponse.json({
+      urls: formattedImages.map((img: any) => img.url),
+      images: formattedImages,
+    });
   } catch (error: any) {
     // If Ditto returns 404, it just means no images have been uploaded yet
     if (error.response?.status !== 404) {

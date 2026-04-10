@@ -202,3 +202,60 @@ export function prefetchLayers(layers: ComponentLayer[]): void {
     if (!imageBitmapCache.has(src)) loadImage(src); // fire-and-forget
   });
 }
+
+export const compressImage = (
+  file: File,
+  maxWidth = 1920,
+  quality = 0.8,
+): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    // Skip compression for GIFs to preserve animation
+    if (file.type === "image/gif") {
+      return resolve(file);
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        // Maintain aspect ratio if resizing is needed
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        // Convert canvas back to a Blob/File
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const newFile = new File([blob], file.name, {
+                type: file.type,
+                lastModified: Date.now(),
+              });
+              resolve(newFile);
+            } else {
+              reject(new Error("Canvas compression failed"));
+            }
+          },
+          file.type,
+          quality, // 0.8 is a good balance between size and visual quality
+        );
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+};

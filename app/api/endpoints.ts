@@ -1,4 +1,4 @@
-import { api_backend, api_for_images } from "./client";
+import { api } from "./client";
 
 type Photo = {
   id: number;
@@ -43,7 +43,7 @@ export const getTwins = async (
 
     try {
       // ✅ CHANGED: Removed the generic from here so it stops throwing an error
-      const response = await api_backend.get(endpoint);
+      const response = await api.get(endpoint);
 
       // ✅ CHANGED: Added the type to the data directly
       const responseData = response.data as PaginatedResponse;
@@ -70,24 +70,30 @@ export const getTwins = async (
   return allItems;
 };
 export const getTwinById = async (id: string) => {
-  const response = await api_backend.get(`/things/${id}`);
+  const response = await api.get(`/things/${id}`);
   return response.data;
 };
 
-export const getMappedSiteImages = async (
-  thingId: string,
-): Promise<Photo[]> => {
-  const response = await api_for_images.get(
-    `/get_images_names?siteId=${toFolder(thingId)}`,
-  );
+export const getMappedSiteImages = async (thingId: string) => {
+  const siteId = thingId.includes(":") ? thingId.split(":")[1] : thingId;
 
-  const data = response.data;
+  const res = await fetch(`/api/get_images_names?siteId=${siteId}`);
+  if (!res.ok) return [];
 
-  return data.urls.map((url: string, i: number) => ({
-    id: i + 1,
-    label: `Site Image ${i + 1}`,
-    url,
-  }));
+  const data = await res.json();
+
+  // Map over the new 'images' array that contains the objects
+  if (data.images && data.images.length > 0) {
+    return data.images.map((img: any, idx: number) => ({
+      id: idx,
+      label: `Photo ${idx + 1}`,
+      url: img.url,
+      default: img.default, // ✅ This is the magic link!
+    }));
+  }
+
+  // Fallback just in case
+  return [];
 };
 
 // Ensure your fetch helper looks like this:
@@ -110,6 +116,50 @@ export const uploadSiteImages = async (siteId: string, files: File[]) => {
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Upload failed");
+  }
+
+  return res.json();
+};
+
+// Add this to your endpoints.ts file
+export const setDefaultSiteImage = async (
+  thingId: string,
+  imageUrl: string,
+) => {
+  // Strip the namespace just in case the full "in.codez.telecom:123" is passed
+  const siteId = thingId.includes(":") ? thingId.split(":")[1] : thingId;
+
+  const res = await fetch("/api/set_default_image", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ siteId, imageUrl }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to set default image");
+  }
+
+  return res.json();
+};
+
+export const deleteSiteImage = async (thingId: string, imageUrl: string) => {
+  // Strip the namespace just in case the full "in.codez.telecom:123" is passed
+  const siteId = thingId.includes(":") ? thingId.split(":")[1] : thingId;
+
+  const res = await fetch("/api/delete_site_image", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ siteId, imageUrl }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to delete image");
   }
 
   return res.json();
