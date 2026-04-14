@@ -198,7 +198,7 @@ const SitePhotos = () => {
                 </button>
 
                 {/* ✅ LABEL & DELETE ICON (bottom-left) */}
-                <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                <div className="group absolute bottom-3 left-3 flex items-center gap-2">
                   <div className="bg-white/90 backdrop-blur-sm text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-full border border-slate-200 shadow-sm">
                     {selected?.label ?? ""}
                   </div>
@@ -214,8 +214,7 @@ const SitePhotos = () => {
                       }
                     }}
                     disabled={isDeleting}
-                    title="Delete Photo"
-                    className="p-1.5 bg-white/90 backdrop-blur-sm text-red-500 hover:text-red-700 hover:bg-red-50 disabled:opacity-50 rounded-full border border-slate-200 shadow-sm transition"
+                    className="p-1.5 cursor-pointer bg-white/90 backdrop-blur-sm text-red-500 hover:text-red-700 hover:bg-red-50 disabled:opacity-50 rounded-full border border-slate-200 shadow-sm transition"
                   >
                     {isDeleting ? (
                       <svg
@@ -253,6 +252,9 @@ const SitePhotos = () => {
                       </svg>
                     )}
                   </button>
+                  <span className="pointer-events-none absolute left-28 mr-2  whitespace-nowrap rounded-md bg-slate-800 text-white text-[10px] font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                    Delete Site Image
+                  </span>
                 </div>
 
                 {/* SET DEFAULT / SAVE CONTROLS (bottom-center) */}
@@ -307,7 +309,7 @@ const SitePhotos = () => {
                     download={selected?.label ?? ""}
                     target="_blank"
                     rel="noopener noreferrer"
-                    title="Download photo"
+                    // title="Download photo"
                   >
                     <svg
                       width="14"
@@ -324,6 +326,9 @@ const SitePhotos = () => {
                       <line x1="12" y1="15" x2="12" y2="3" />
                     </svg>
                   </a>
+                  <span className="pointer-events-none absolute right-7 mr-2 bottom-1 whitespace-nowrap rounded-md bg-slate-800 text-white text-[10px] font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                    Download Image
+                  </span>
                 </div>
               </div>
             )}

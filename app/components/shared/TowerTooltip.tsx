@@ -308,7 +308,7 @@ const TowerTooltip = ({
         }}
       >
         <img
-          src={image || "images/image.png"}
+          src={image || "images/tower_stock_images/tower3.jpg"}
           alt="Tower"
           style={{
             maxWidth: "100%",
