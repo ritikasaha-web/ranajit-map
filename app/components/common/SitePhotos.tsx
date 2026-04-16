@@ -3,8 +3,11 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { RxCross2 } from "react-icons/rx";
-import { useSitePhotosStore } from "@/app/store/useTowerStore";
-import { useTowerStore } from "@/app/store/useTowerStore";
+import {
+  useSitePhotosStore,
+  useTowerStore,
+  useUploadStore,
+} from "@/app/store/useTowerStore";
 import { useTower } from "@/app/hooks/getTowers";
 import {
   getMappedSiteImages,
@@ -20,6 +23,7 @@ const bustUrl = (url: string, cb: number) =>
 
 const SitePhotos = () => {
   const setSitePhotosOpen = useSitePhotosStore((s) => s.setSitePhotosOpen);
+  const setUploadOpen = useUploadStore((s) => s.setUploadOpen);
   const { data: currTower } = useTower(useTowerStore((s) => s.selectedTowerId));
   const queryClient = useQueryClient();
 
@@ -86,6 +90,13 @@ const SitePhotos = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              className="bg-[#0084cc] hover:bg-[#0073b3] text-white font-bold py-1 px-3 rounded-full transition-colors duration-200 ease-in-out focus:outline-none text-xs text-center cursor-pointer"
+              onClick={() => setUploadOpen(true)}
+            >
+              Upload
+            </button>
+            <span className="w-px h-4 bg-slate-200" />
             <span className="text-xs font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
               {currTower?.attributes?.installation_type ?? "—"}
             </span>
@@ -94,6 +105,7 @@ const SitePhotos = () => {
               {currTower?.attributes?.structure_type?.replace(/_/g, " ") ?? "—"}
             </span>
             <span className="w-px h-4 bg-slate-200" />
+
             <button
               onClick={() => setSitePhotosOpen(false)}
               className="rounded-full cursor-pointer p-1.5 bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition"

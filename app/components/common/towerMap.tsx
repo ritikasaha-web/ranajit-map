@@ -169,20 +169,16 @@ const TowerMap = () => {
               tower.attributes.location.lat,
               tower.attributes.location.lng,
             ]}
-            icon={
-              zoom >= 18
-                ? bigIcon
-                : L.icon({
-                    iconUrl: icon_url(tower.attributes.down_time),
-                    iconSize: [
-                      tower.attributes.height_m / 3,
-                      tower.attributes.height_m / 2,
-                    ],
-                    iconAnchor: [20, 40],
-                    popupAnchor: [0, -40],
-                    className: "fade-in-marker", // <-- ADD THIS
-                  })
-            }
+            icon={L.icon({
+              iconUrl: icon_url(tower.attributes.down_time),
+              iconSize: [
+                tower.attributes.height_m / 3,
+                tower.attributes.height_m / 2,
+              ],
+              iconAnchor: [20, 40],
+              popupAnchor: [0, -40],
+              className: "fade-in-marker", // <-- ADD THIS
+            })}
             eventHandlers={{
               click: () => setSelectedTowerId(tower.thingId),
             }}

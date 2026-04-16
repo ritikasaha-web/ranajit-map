@@ -12,6 +12,7 @@ import { FiUpload } from "react-icons/fi";
 import {
   useExpandTowerStore,
   useSitePhotosStore,
+  useUploadStore,
 } from "@/app/store/useTowerStore";
 import { GrGallery } from "react-icons/gr";
 import { anchorMap, ComponentLabels, labelOverrides } from "./componentLabels";
@@ -59,7 +60,8 @@ const TowerPreview = ({
   uptime,
 }: TowerPreviewProps) => {
   const [finalImage, setFinalImage] = useState<string | null>(null);
-  const [uploadOpen, setUploadOpen] = useState(false);
+  const isUploadOpen = useUploadStore((s) => s.isUploadOpen);
+  const setUploadOpen = useUploadStore((s) => s.setUploadOpen);
 
   const setExpandState = useExpandTowerStore((s) => s.setOpenExpandTower);
   const setSitePhotosOpen = useSitePhotosStore((s) => s.setSitePhotosOpen);
@@ -264,7 +266,9 @@ const TowerPreview = ({
           ))}
         </div>
       </div>
-      {uploadOpen && <SiteUploadPhotos onClose={() => setUploadOpen(false)} />}
+      {isUploadOpen && (
+        <SiteUploadPhotos onClose={() => setUploadOpen(false)} />
+      )}
     </div>
   );
 };

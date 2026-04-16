@@ -13,6 +13,10 @@ interface SitePhotosStore {
   isSitePhotosOpen: boolean;
   setSitePhotosOpen: (val: boolean) => void;
 }
+interface UploadStore {
+  isUploadOpen: boolean;
+  setUploadOpen: (isOpen: boolean) => void;
+}
 
 export const useTowerStore = create<TowerStore>((set) => ({
   selectedTowerId: null,
@@ -26,4 +30,9 @@ export const useExpandTowerStore = create<ExpandTowerStore>((set) => ({
 export const useSitePhotosStore = create<SitePhotosStore>((set) => ({
   isSitePhotosOpen: false,
   setSitePhotosOpen: (val) => set({ isSitePhotosOpen: val }),
+}));
+
+export const useUploadStore = create<UploadStore>((set) => ({
+  isUploadOpen: false,
+  setUploadOpen: (isOpen) => set({ isUploadOpen: isOpen }),
 }));

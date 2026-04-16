@@ -205,14 +205,11 @@ export function prefetchLayers(layers: ComponentLayer[]): void {
 
 export const compressImage = (
   file: File,
-  maxWidth = 1920,
-  quality = 0.8,
+  maxWidth = 1280,
+  quality = 0.6,
 ): Promise<File> => {
   return new Promise((resolve, reject) => {
-    // Skip compression for GIFs to preserve animation
-    if (file.type === "image/gif") {
-      return resolve(file);
-    }
+    if (file.type === "image/gif") return resolve(file);
 
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -226,7 +223,6 @@ export const compressImage = (
         let width = img.width;
         let height = img.height;
 
-        // Maintain aspect ratio if resizing is needed
         if (width > maxWidth) {
           height = Math.round((height * maxWidth) / width);
           width = maxWidth;
@@ -235,27 +231,38 @@ export const compressImage = (
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext("2d");
+
+        // For PNGs with transparency, fill white background before converting
+        if (file.type === "image/png") {
+          ctx!.fillStyle = "#ffffff";
+          ctx!.fillRect(0, 0, width, height);
+        }
+
         ctx?.drawImage(img, 0, 0, width, height);
 
-        // Convert canvas back to a Blob/File
+        // Always output as JPEG — quality param is ignored for PNG
+        const outputType = "image/jpeg";
+        const outputName = file.name.replace(/\.[^.]+$/, ".jpg");
+
         canvas.toBlob(
           (blob) => {
             if (blob) {
-              const newFile = new File([blob], file.name, {
-                type: file.type,
-                lastModified: Date.now(),
-              });
-              resolve(newFile);
+              resolve(
+                new File([blob], outputName, {
+                  type: outputType,
+                  lastModified: Date.now(),
+                }),
+              );
             } else {
               reject(new Error("Canvas compression failed"));
             }
           },
-          file.type,
-          quality, // 0.8 is a good balance between size and visual quality
+          outputType,
+          quality,
         );
       };
-      img.onerror = (err) => reject(err);
+      img.onerror = reject;
     };
-    reader.onerror = (err) => reject(err);
+    reader.onerror = reject;
   });
 };

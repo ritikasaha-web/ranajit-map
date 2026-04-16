@@ -206,15 +206,25 @@ const ExpandTowerPreview = () => {
   );
 
   /* ── Ordered items for the right-panel list ── */
-  const orderedTowerItems = useMemo(
-    () =>
-      Object.fromEntries(
-        [...(componentSetMap[rawStructureType] ?? monopoleComponentSet)].map(
-          (key) => [key, towerItems[key]],
-        ),
-      ),
-    [towerItems, rawStructureType],
-  );
+  const orderedTowerItems = useMemo(() => {
+    const componentSet =
+      componentSetMap[rawStructureType] ?? monopoleComponentSet;
+
+    return Object.fromEntries(
+      [...componentSet]
+        .filter((key) => {
+          const value = towerItems[key];
+          // Filter out null, undefined, and empty strings
+          if (value === undefined || value === null) return false;
+          if (typeof value === "string" && value.trim() === "") return false;
+          // Filter out invalid numbers if needed (matching your layer logic)
+          if (typeof value === "number" && value < 0) return false;
+
+          return true;
+        })
+        .map((key) => [key, towerItems[key]]),
+    );
+  }, [towerItems, rawStructureType]);
 
   const activeCount = activeComponents.size;
 
