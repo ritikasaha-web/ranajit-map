@@ -138,6 +138,13 @@ const TowerMap = () => {
         minZoom={2}
         maxZoom={18}
         scrollWheelZoom
+        // 1. Define the South-West and North-East corners of the world
+        maxBounds={[
+          [-90, -180],
+          [90, 180],
+        ]}
+        // 2. Set viscosity to 1.0 so the user absolutely cannot drag past the bounds
+        maxBoundsViscosity={1.0}
       >
         {/* Watches zoom level */}
         <ZoomWatcher setZoom={setZoom} />

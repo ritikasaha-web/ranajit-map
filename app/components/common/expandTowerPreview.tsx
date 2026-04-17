@@ -14,6 +14,10 @@ import {
   monopoleComponentSet,
   baseTypes,
   applyFormatting,
+  ComponentLayer,
+  generateTowerImage,
+  prefetchLayers,
+  formatDuration,
 } from "@/app/constants/component_names";
 import { useTower } from "@/app/hooks/getTowers";
 import { useTowerStore, useExpandTowerStore } from "@/app/store/useTowerStore";
@@ -22,11 +26,6 @@ import {
   labelOverrides,
   ComponentLabels,
 } from "../shared/componentLabels";
-import {
-  ComponentLayer,
-  generateTowerImage,
-  prefetchLayers,
-} from "@/app/constants/component_names"; // ← shared with TowerPreview
 
 /* ── Module-level constants ─────────────────────────────────── */
 const componentSetMap: Record<string, Set<string>> = {
@@ -34,14 +33,6 @@ const componentSetMap: Record<string, Set<string>> = {
   tripole: tripoleComponentSet,
   four_pole: fourPoledComponentSet,
   guyed_mast: guyedMastComponentSet,
-};
-
-const formatDuration = (minutes: number): string => {
-  const totalSeconds = minutes * 60;
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 };
 
 /* ── Main Component ─────────────────────────────────────────── */

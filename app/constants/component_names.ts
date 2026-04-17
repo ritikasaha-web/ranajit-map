@@ -89,6 +89,16 @@ export const applyFormatting = (text: string) => {
   return formatLabel(text);
 };
 
+export const formatDuration = (minutes: number): string => {
+  const totalSeconds = Math.round(minutes * 60);
+
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+};
+
 export const upperCaseSet: Set<string> = new Set([
   "spr",
   "slr",

@@ -76,58 +76,26 @@ const SiteUploadPhotos = ({ onClose }: { onClose: () => void }) => {
     setError(null);
   };
 
-  // const upload = async () => {
-  //   if (!previews.length || !folder) return;
-
-  //   setUploading(true);
-  //   setError(null);
-
-  //   try {
-  //     // 1. Compress all images concurrently before sending
-  //     const compressedFiles = await Promise.all(
-  //       previews.map((p) => compressImage(p.file, 1280, 0.7)),
-  //       // 1280px max-width and 70% quality will drastically reduce file size
-  //     );
-
-  //     // 2. Send the compressed files to your API
-  //     const data = await uploadSiteImages(folder, compressedFiles);
-
-  //     setImages((prev) => [...prev, ...data.urls]);
-
-  //     previews.forEach((p) => URL.revokeObjectURL(p.objectUrl));
-  //     setPreviews([]);
-  //     setDone(true);
-
-  //     await queryClient.invalidateQueries({
-  //       queryKey: ["siteImages", thingId],
-  //     });
-  //   } catch {
-  //     setError("Upload failed. Please try again.");
-  //   } finally {
-  //     setUploading(false);
-  //   }
-  // };
-
   const upload = async () => {
     if (!previews.length || !folder) return;
 
     setUploading(true);
-
     setError(null);
 
     try {
-      const data = await uploadSiteImages(
-        folder,
-
-        previews.map((p) => p.file),
+      // 1. Compress all images concurrently before sending
+      const compressedFiles = await Promise.all(
+        previews.map((p) => compressImage(p.file, 1280, 0.7)),
+        // 1280px max-width and 70% quality will drastically reduce file size
       );
+
+      // 2. Send the compressed files to your API
+      const data = await uploadSiteImages(folder, compressedFiles);
 
       setImages((prev) => [...prev, ...data.urls]);
 
       previews.forEach((p) => URL.revokeObjectURL(p.objectUrl));
-
       setPreviews([]);
-
       setDone(true);
 
       await queryClient.invalidateQueries({

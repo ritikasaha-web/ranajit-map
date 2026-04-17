@@ -27,7 +27,8 @@ export async function POST(req: NextRequest) {
     let images: any[] = [];
     try {
       const response = await api.get(attrPath, {
-        baseURL: "http://138.201.137.244:5500/api/2/",
+        baseURL:
+          process.env.API_BASE_URL || "http://138.201.137.244:5500/api/2/",
       });
       images = response.data || [];
     } catch (error: any) {

@@ -1,7 +1,7 @@
 import { getMappedSiteImages } from "@/app/api/endpoints";
 import React, { useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-
+import { formatDuration } from "@/app/constants/component_names";
 interface TowerTooltipProps {
   thingId: string;
   down_time: number;
@@ -12,14 +12,6 @@ interface TowerTooltipProps {
   dg?: string;
   imageUrl?: string;
 }
-
-const formatDuration = (minutes: number): string => {
-  const totalSeconds = minutes * 60;
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-};
 
 const bustUrl = (url: string, cb: number) =>
   url.includes("?") ? `${url}&cb=${cb}` : `${url}?cb=${cb}`;

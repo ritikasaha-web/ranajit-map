@@ -6,6 +6,10 @@ import {
   guyedMastComponentSet,
   baseTypes,
   formatLabel,
+  formatDuration,
+  ComponentLayer,
+  generateTowerImage,
+  prefetchLayers,
 } from "@/app/constants/component_names";
 import { BsFullscreen } from "react-icons/bs";
 import { FiUpload } from "react-icons/fi";
@@ -17,11 +21,6 @@ import {
 import { GrGallery } from "react-icons/gr";
 import { anchorMap, ComponentLabels, labelOverrides } from "./componentLabels";
 import { useState, useEffect, useMemo } from "react";
-import {
-  ComponentLayer,
-  generateTowerImage,
-  prefetchLayers,
-} from "@/app/constants/component_names"; // ← shared with expandTowerPreview
 import SiteUploadPhotos from "../common/SiteUploadPhotos";
 
 /* ── Types ──────────────────────────────────────────────────── */
@@ -43,13 +42,6 @@ const componentSetMap: Record<string, Set<string>> = {
 };
 
 /* ── Pure helpers (module-level, not recreated on each render) ── */
-const formatDuration = (minutes: number): string => {
-  const totalSeconds = minutes * 60;
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-};
 
 /* ── Main Component ─────────────────────────────────────────── */
 const TowerPreview = ({

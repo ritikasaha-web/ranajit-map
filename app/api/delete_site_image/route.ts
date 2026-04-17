@@ -29,7 +29,8 @@ export async function POST(req: NextRequest) {
     let images: any[] = [];
     try {
       const getResponse = await api.get(attrPath, {
-        baseURL: "http://138.201.137.244:5500/api/2/", // Force absolute URL
+        baseURL:
+          process.env.API_BASE_URL || "http://138.201.137.244:5500/api/2/", // Force absolute URL
       });
       images = getResponse.data || [];
     } catch (error: any) {
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
 
     // ── 5. Save the updated array back to Ditto ──
     await api.put(attrPath, updatedImages, {
-      baseURL: "http://138.201.137.244:5500/api/2/", // Force absolute URL
+      baseURL: process.env.API_BASE_URL || "http://138.201.137.244:5500/api/2/", // Force absolute URL
     });
 
     return NextResponse.json({ success: true });
