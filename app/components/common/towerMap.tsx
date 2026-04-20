@@ -170,60 +170,80 @@ const TowerMap = () => {
           zoomToBoundsOnClick={true}
         > */}
         {towers.map((tower: any) => (
-          <Marker
-            key={tower.thingId}
-            position={[
-              tower.attributes.location.lat,
-              tower.attributes.location.lng,
-            ]}
-            icon={L.icon({
-              iconUrl: icon_url(tower.attributes.down_time),
-              iconSize: [
-                tower.attributes.height_m / 3,
-                tower.attributes.height_m / 2,
-              ],
-              iconAnchor: [20, 40],
-              popupAnchor: [0, -40],
-              className: "fade-in-marker", // <-- ADD THIS
-            })}
-            eventHandlers={{
-              click: () => setSelectedTowerId(tower.thingId),
-            }}
-          >
-            <Tooltip
-              direction="top"
-              offset={[0, -50]}
-              opacity={1}
-              className="tower-tooltip-override"
+          <React.Fragment key={tower.thingId}>
+            {/* 1. The Base Tower Marker */}
+            <Marker
+              position={[
+                tower.attributes.location.lat,
+                tower.attributes.location.lng,
+              ]}
+              icon={L.icon({
+                iconUrl: icon_url(tower.attributes.down_time),
+                iconSize: [
+                  tower.attributes.height_m / 3,
+                  tower.attributes.height_m / 2,
+                ],
+                iconAnchor: [20, 40],
+                popupAnchor: [0, -40],
+                className: "fade-in-marker",
+              })}
+              eventHandlers={{
+                click: () => setSelectedTowerId(tower.thingId),
+              }}
             >
-              <TowerTooltip
-                thingId={tower.thingId}
-                down_time={tower.attributes.down_time}
-                uptime={tower.attributes.uptime}
-                imageUrl="/images/image.png"
+              <Tooltip
+                direction="top"
+                offset={[0, -50]}
+                opacity={1}
+                className="tower-tooltip-override"
+              >
+                <TowerTooltip
+                  thingId={tower.thingId}
+                  down_time={tower.attributes.down_time}
+                  uptime={tower.attributes.uptime}
+                  imageUrl="/images/image.png"
+                />
+              </Tooltip>
+              <Popup className="w-[450px] h-[450px]">
+                <strong>{tower.thingId}</strong>
+                <div className="w-[420px] h-[450px] overflow-auto">
+                  {!selectedTower || selectedTower.thingId !== tower.thingId ? (
+                    <div className="p-4 text-sm text-gray-500">
+                      Loading tower details…
+                    </div>
+                  ) : (
+                    <TowerPreview
+                      structureType={selectedTower.attributes.structure_type}
+                      installationType={
+                        selectedTower.attributes.installation_type
+                      }
+                      components={selectedTower.features.components.properties}
+                      uptime={selectedTower.attributes.uptime}
+                      down_time={selectedTower.attributes.down_time}
+                    />
+                  )}
+                </div>
+              </Popup>
+            </Marker>
+
+            {/* 2. The Animated Overlay (SIBLING, NOT NESTED) */}
+            {/* If you want it on ALL red icons, remove: && selectedTowerId === tower.thingId */}
+            {tower.attributes.down_time == 0 && (
+              <Marker
+                position={[
+                  tower.attributes.location.lat,
+                  tower.attributes.location.lng,
+                ]}
+                interactive={false}
+                icon={L.divIcon({
+                  className: "custom-div-icon",
+                  html: `<div class="alarm-circle"></div>`,
+                  iconSize: [40, 40],
+                  iconAnchor: [19, 50],
+                })}
               />
-            </Tooltip>
-            <Popup className="w-[450px] h-[450px]">
-              <strong>{tower.thingId}</strong>
-              <div className="w-[420px] h-[450px] overflow-auto">
-                {!selectedTower || selectedTower.thingId !== tower.thingId ? (
-                  <div className="p-4 text-sm text-gray-500">
-                    Loading tower details…
-                  </div>
-                ) : (
-                  <TowerPreview
-                    structureType={selectedTower.attributes.structure_type}
-                    installationType={
-                      selectedTower.attributes.installation_type
-                    }
-                    components={selectedTower.features.components.properties}
-                    uptime={selectedTower.attributes.uptime}
-                    down_time={selectedTower.attributes.down_time}
-                  />
-                )}
-              </div>
-            </Popup>
-          </Marker>
+            )}
+          </React.Fragment>
         ))}
         {/* </MarkerClusterGroup> */}
       </MapContainer>
