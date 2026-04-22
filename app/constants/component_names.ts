@@ -205,14 +205,20 @@ export async function generateTowerImage(
   return result;
 }
 
-/** Call this when tower data arrives (e.g. after useTower resolves)
- *  to warm the bitmap cache before the user opens the modal. */
-export function prefetchLayers(layers: ComponentLayer[]): void {
-  layers.forEach(({ src }) => {
-    if (!imageBitmapCache.has(src)) loadImage(src); // fire-and-forget
-  });
+// component_names.ts
+export function prefetchLayers(layers: ComponentLayer[]): Promise<void> {
+  return Promise.all(
+    layers.map(
+      (l) =>
+        new Promise<void>((resolve) => {
+          const img = new Image();
+          img.onload = () => resolve();
+          img.onerror = () => resolve(); // don't block compositing on 404s
+          img.src = l.src;
+        }),
+    ),
+  ).then(() => undefined);
 }
-
 export const compressImage = (
   file: File,
   maxWidth = 1280,

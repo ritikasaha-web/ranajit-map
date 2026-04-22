@@ -22,6 +22,7 @@ import { GrGallery } from "react-icons/gr";
 import { anchorMap, ComponentLabels, labelOverrides } from "./componentLabels";
 import { useState, useEffect, useMemo } from "react";
 import SiteUploadPhotos from "../common/SiteUploadPhotos";
+import { GridLoader } from "react-spinners";
 
 /* ── Types ──────────────────────────────────────────────────── */
 
@@ -41,8 +42,6 @@ const componentSetMap: Record<string, Set<string>> = {
   guyed_mast: guyedMastComponentSet,
 };
 
-/* ── Pure helpers (module-level, not recreated on each render) ── */
-
 /* ── Main Component ─────────────────────────────────────────── */
 const TowerPreview = ({
   components,
@@ -61,7 +60,6 @@ const TowerPreview = ({
   // ── Kept exactly as original ──
   let downtimeLabel = "OK";
   let downtimeColor = "text-green-600 bg-green-50 border-green-200";
-  // if (down_time > 20) {
   if (down_time > 0) {
     downtimeLabel = "Down";
     downtimeColor = "text-red-600 bg-red-50 border-red-200";
@@ -70,9 +68,10 @@ const TowerPreview = ({
     downtimeColor = "text-orange-600 bg-orange-50 border-orange-200";
   }
 
-  // ── Single useMemo builds layers — eliminates the duplicate
-  //    baseLayers/componentLayers + allLayers + memoLayers pattern ──
-  const layers = useMemo<ComponentLayer[]>(() => {
+  const { layers, prefetchReady } = useMemo<{
+    layers: ComponentLayer[];
+    prefetchReady: Promise<void>;
+  }>(() => {
     const towerComponents =
       componentSetMap[structureType] ?? monopoleComponentSet;
     const anchors = anchorMap[structureType] ?? anchorMap.monopole;
@@ -109,16 +108,16 @@ const TowerPreview = ({
       });
     }
 
-    return [...base, ...componentLayers];
+    const layers = [...base, ...componentLayers];
+
+    // Start all image fetches immediately. prefetchLayers must return
+    // Promise<void> — see note at the bottom of this file.
+    const prefetchReady = prefetchLayers(layers);
+
+    return { layers, prefetchReady };
   }, [components, structureType, installationType]);
 
-  // ── Warm the bitmap cache as soon as layer srcs are known ──
-  useEffect(() => {
-    if (layers.length) prefetchLayers(layers);
-  }, [layers]);
-
-  // ── Memoize label entries so ComponentLabels never gets a new
-  //    array reference unless layers/components actually change ──
+  // ── Memoize label entries ──
   const labelEntries = useMemo(
     () =>
       layers
@@ -151,75 +150,93 @@ const TowerPreview = ({
     [towerComponents, components],
   );
 
-  // ── Effect with stale-result guard ──
+  // ── FIX 2: Await prefetchReady before compositing.
+  //    generateTowerImage will find every bitmap already in the browser's
+  //    decoded image cache, so canvas drawImage() calls are synchronous
+  //    and compositing completes in a single microtask tick.
   useEffect(() => {
     let cancelled = false;
-    generateTowerImage(layers).then((img: any) => {
-      if (!cancelled) setFinalImage(img);
+    prefetchReady.then(() => {
+      if (cancelled) return;
+      generateTowerImage(layers).then((img: any) => {
+        if (!cancelled) setFinalImage(img);
+      });
     });
     return () => {
       cancelled = true;
     };
-  }, [layers]);
+  }, [layers, prefetchReady]);
 
   return (
     <div className="w-full h-full bg-white rounded-lg p-2 flex flex-col gap-3">
       {/* ── Image Section ── */}
+      {/* ── Image Section ── */}
       <div className="relative w-full h-[320px] bg-white rounded-md border border-slate-300 overflow-hidden flex items-center justify-center">
-        {/* ── Action Buttons (top-right) ── */}
-        <div className="absolute top-2 right-2 z-30 flex flex-col gap-1.5">
-          {/* Expand View */}
-          <div className="group relative">
-            <button
-              onClick={() => setExpandState(true)}
-              className="cursor-pointer rounded-full p-1.5 bg-white/80 backdrop-blur-sm border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors duration-200"
-            >
-              <BsFullscreen size={16} />
-            </button>
-            <span className="pointer-events-none absolute right-full mr-2 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-800 text-white text-[10px] font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-              Expand View
-            </span>
+        {/* Skeleton shimmer while loading */}
+        {!finalImage && (
+          <div className="absolute grid place-items-center inset-0 bg-slate-100 animate-pulse rounded-md">
+            <GridLoader color="#787878" size={12} />
           </div>
-
-          {/* Site Photos */}
-          <div className="group relative">
-            <button
-              onClick={() => setSitePhotosOpen(true)}
-              className="cursor-pointer rounded-full p-1.5 bg-white/80 backdrop-blur-sm border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors duration-200"
-            >
-              <GrGallery size={16} />
-            </button>
-            <span className="pointer-events-none absolute right-full mr-2 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-800 text-white text-[10px] font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-              Site Photos
-            </span>
-          </div>
-
-          {/* Upload Images */}
-          <div className="group relative">
-            <button
-              onClick={() => setUploadOpen(true)}
-              className="cursor-pointer rounded-full p-1.5 bg-white/80 backdrop-blur-sm border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors duration-200"
-            >
-              <FiUpload size={16} />
-            </button>
-            <span className="pointer-events-none absolute right-full mr-2 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-800 text-white text-[10px] font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-              Upload Images
-            </span>
-          </div>
-        </div>
-
-        {finalImage && (
-          <img
-            src={finalImage}
-            alt="Tower preview"
-            className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-          />
         )}
 
-        <ComponentLabels
-          entries={labelEntries}
-          overrides={labelOverrides[structureType] ?? {}}
-        />
+        {/* Action Buttons — also hide until image is ready */}
+        {finalImage && (
+          <div className="absolute top-2 right-2 z-30 flex flex-col gap-1.5">
+            {/* Expand View */}
+            <div className="group relative">
+              <button
+                onClick={() => setExpandState(true)}
+                className="cursor-pointer rounded-full p-1.5 bg-white/80 backdrop-blur-sm border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors duration-200"
+              >
+                <BsFullscreen size={16} />
+              </button>
+              <span className="pointer-events-none absolute right-full mr-2 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-800 text-white text-[10px] font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                Expand View
+              </span>
+            </div>
+
+            {/* Site Photos */}
+            <div className="group relative">
+              <button
+                onClick={() => setSitePhotosOpen(true)}
+                className="cursor-pointer rounded-full p-1.5 bg-white/80 backdrop-blur-sm border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors duration-200"
+              >
+                <GrGallery size={16} />
+              </button>
+              <span className="pointer-events-none absolute right-full mr-2 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-800 text-white text-[10px] font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                Site Photos
+              </span>
+            </div>
+
+            {/* Upload Images */}
+            <div className="group relative">
+              <button
+                onClick={() => setUploadOpen(true)}
+                className="cursor-pointer rounded-full p-1.5 bg-white/80 backdrop-blur-sm border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors duration-200"
+              >
+                <FiUpload size={16} />
+              </button>
+              <span className="pointer-events-none absolute right-full mr-2 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-800 text-white text-[10px] font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                Upload Images
+              </span>
+            </div>
+          </div>
+        )}
+
+        {finalImage && (
+          <>
+            <img
+              src={finalImage}
+              alt="Tower preview"
+              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+            />
+            {/* ── Labels only mount after image is ready ── */}
+            <ComponentLabels
+              entries={labelEntries}
+              overrides={labelOverrides[structureType] ?? {}}
+            />
+          </>
+        )}
       </div>
 
       {/* ── Tower Status ── */}
@@ -258,6 +275,7 @@ const TowerPreview = ({
           ))}
         </div>
       </div>
+
       {isUploadOpen && (
         <SiteUploadPhotos onClose={() => setUploadOpen(false)} />
       )}
@@ -266,3 +284,24 @@ const TowerPreview = ({
 };
 
 export default TowerPreview;
+
+/*
+ * REQUIRED CHANGE in component_names.ts
+ * ──────────────────────────────────────
+ * prefetchLayers must return Promise<void> instead of void.
+ * Replace your current implementation with this:
+ *
+ * export function prefetchLayers(layers: ComponentLayer[]): Promise<void> {
+ *   return Promise.all(
+ *     layers.map(
+ *       (l) =>
+ *         new Promise<void>((resolve) => {
+ *           const img = new Image();
+ *           img.onload = () => resolve();
+ *           img.onerror = () => resolve(); // don't block compositing on 404s
+ *           img.src = l.src;
+ *         })
+ *     )
+ *   ).then(() => undefined);
+ * }
+ */
