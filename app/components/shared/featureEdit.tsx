@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { updateThingFeatures } from "@/app/api/endpoints"; // adjust path
 
 interface FeatureEditProps {
   data?: any;
@@ -19,11 +20,7 @@ const FeatureEdit: React.FC<FeatureEditProps> = ({ data = {}, thingId }) => {
     setDraftData(data);
   }, [data]);
 
-  /* -----------------------------
-     Recursive Editable Renderer
-  ----------------------------- */
   const renderEditable = (value: any, path: string[]) => {
-    // primitive
     if (value === null || value === undefined || typeof value !== "object") {
       return isEditing ? (
         <input
@@ -49,7 +46,6 @@ const FeatureEdit: React.FC<FeatureEditProps> = ({ data = {}, thingId }) => {
       );
     }
 
-    // object
     return (
       <div className="ml-3 mt-2 space-y-2 border-l border-sky-200 pl-3">
         {Object.entries(value).map(([k, v]) => (
@@ -64,9 +60,6 @@ const FeatureEdit: React.FC<FeatureEditProps> = ({ data = {}, thingId }) => {
     );
   };
 
-  /* -----------------------------
-     Actions
-  ----------------------------- */
   const handleEdit = () => setIsEditing(true);
 
   const handleCancel = () => {
@@ -76,32 +69,11 @@ const FeatureEdit: React.FC<FeatureEditProps> = ({ data = {}, thingId }) => {
 
   const handleSave = async () => {
     try {
-      const response = await fetch(
-        // `http://localhost:8080/api/2/things/${thingId}/features`,
-        `/api/2/things/${thingId}/features`,
-
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/merge-patch+json",
-            Authorization: "Basic " + btoa("ditto:ditto"),
-          },
-          body: JSON.stringify(draftData),
-        },
-      );
-
-      if (!response.ok) {
-        const err = await response.text();
-        toast.warning("Something went wrong, can't change features.");
-        return;
-      }
+      await updateThingFeatures(thingId, draftData);
 
       setLocalData(draftData);
       setIsEditing(false);
-      queryClient.invalidateQueries({
-        queryKey: ["towers", thingId],
-      });
-
+      queryClient.invalidateQueries({ queryKey: ["towers", thingId] });
       toast.promise<{ name: string }>(
         () =>
           new Promise((resolve) =>
@@ -109,7 +81,7 @@ const FeatureEdit: React.FC<FeatureEditProps> = ({ data = {}, thingId }) => {
           ),
         {
           loading: "Loading...",
-          success: (data) => "Features updated successfully",
+          success: () => "Features updated successfully",
           error: "Error",
         },
       );
@@ -120,7 +92,6 @@ const FeatureEdit: React.FC<FeatureEditProps> = ({ data = {}, thingId }) => {
 
   return (
     <div className="relative w-1/2 p-6 bg-white/80 rounded-xl border border-sky-200 shadow-sm">
-      {/* Header Actions */}
       <div className="absolute top-4 right-4 flex gap-2">
         {!isEditing ? (
           <button
@@ -163,7 +134,6 @@ const FeatureEdit: React.FC<FeatureEditProps> = ({ data = {}, thingId }) => {
               <div className="font-semibold text-sky-700 capitalize mb-1">
                 {featureName.replaceAll("_", " ")}
               </div>
-
               {featureObj?.properties ? (
                 renderEditable(featureObj.properties, [
                   featureName,

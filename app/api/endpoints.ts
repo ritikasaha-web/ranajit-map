@@ -69,11 +69,23 @@ export const getTwins = async (
 
   return allItems;
 };
+
+const EXCLUDED_KEYS = ["images"];
+
 export const getTwinById = async (id: string) => {
   const response = await api.get(`/things/${id}`);
-  return response.data;
-};
+  const data = response.data;
 
+  if (data.attributes) {
+    data.attributes = Object.fromEntries(
+      Object.entries(data.attributes).filter(
+        ([key]) => !EXCLUDED_KEYS.includes(key),
+      ),
+    );
+  }
+
+  return data;
+};
 export const getMappedSiteImages = async (thingId: string) => {
   const siteId = thingId.includes(":") ? thingId.split(":")[1] : thingId;
 
@@ -163,4 +175,30 @@ export const deleteSiteImage = async (thingId: string, imageUrl: string) => {
   }
 
   return res.json();
+};
+export const updateThingAttributes = async (
+  thingId: string,
+  attributes: Record<string, any>,
+) => {
+  const response = await api.patch(
+    `/things/${thingId}/attributes`,
+    attributes,
+    {
+      headers: {
+        "Content-Type": "application/merge-patch+json",
+      },
+    },
+  );
+  return response.data;
+};
+export const updateThingFeatures = async (
+  thingId: string,
+  features: Record<string, any>,
+) => {
+  const response = await api.patch(`/things/${thingId}/features`, features, {
+    headers: {
+      "Content-Type": "application/merge-patch+json",
+    },
+  });
+  return response.data;
 };

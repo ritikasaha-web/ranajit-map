@@ -1,7 +1,6 @@
 "use client";
 import "./globals.css";
 import ExpandTowerPreview from "./components/common/expandTowerPreview";
-import { useState } from "react";
 import dynamic from "next/dynamic";
 import { useExpandTowerStore, useSitePhotosStore } from "./store/useTowerStore";
 import SitePhotos from "./components/common/SitePhotos";

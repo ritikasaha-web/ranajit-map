@@ -125,12 +125,6 @@ const twinOverview = () => {
     );
   };
 
-  /* ── Features with 2-level accordion ──────────────────────────
-     Level 1 : each feature key  (e.g. "components", "component_details")
-     Level 2 : each key inside .properties that is itself an object
-               (e.g. "equipment_shelter" inside "component_details")
-     Below L2: renderRecursive takes over — same behaviour as before
-  ─────────────────────────────────────────────────────────────── */
   const renderFeatures = (featuresObj: any) => {
     return (
       <div className="mt-3 space-y-1">
@@ -179,21 +173,11 @@ const twinOverview = () => {
     <div className="w-[30%] h-screen border-2 border-sky-400 bg-sky-50 text-slate-800 flex flex-col">
       {/* Header */}
 
-      {/* <button onClick={() => setUploadOpen(true)}>Upload Photos</button>
-      {uploadOpen && <SiteUploadPhotos onClose={() => setUploadOpen(false)} />} */}
       <div className="h-[10%] relative flex items-center justify-center border-b-2 border-sky-400 bg-white/90">
         {/* Centered Title */}
         <h1 className="text-lg font-semibold tracking-wide">
           {thingId ? thingId : "Tower Name"}
         </h1>
-
-        {/* Right Button */}
-        {/* <button
-          onClick={() => setUploadOpen(true)}
-          className="absolute right-4 text-xs font-semibold px-3 py-1.5 rounded-full bg-sky-500 text-white hover:bg-sky-600 transition shadow-sm"
-        >
-          Upload
-        </button> */}
       </div>
 
       {uploadOpen && <SiteUploadPhotos onClose={() => setUploadOpen(false)} />}

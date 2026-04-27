@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { updateThingAttributes } from "@/app/api/endpoints"; // adjust path
 
 interface AttributeEditProps {
   data: Record<string, any>;
@@ -21,31 +22,11 @@ const AttributeEdit: React.FC<AttributeEditProps> = ({ data, thingId }) => {
 
   const handleSave = async () => {
     try {
-      const response = await fetch(
-        // `http://localhost:8080/api/2/things/${thingId}/attributes`,
-        `/api/2/things/${thingId}/attributes`,
-
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/merge-patch+json",
-            Authorization: "Basic " + btoa("ditto:ditto"),
-          },
-          body: JSON.stringify(draftData),
-        },
-      );
-
-      if (!response.ok) {
-        const err = await response.text();
-        toast.warning("Something went wrong, can't change attributes.");
-        return;
-      }
+      await updateThingAttributes(thingId, draftData);
 
       setLocalData(draftData);
       setIsEditing(false);
-      queryClient.invalidateQueries({
-        queryKey: ["towers", thingId],
-      });
+      queryClient.invalidateQueries({ queryKey: ["towers", thingId] });
       toast.promise<{ name: string }>(
         () =>
           new Promise((resolve) =>
@@ -53,7 +34,7 @@ const AttributeEdit: React.FC<AttributeEditProps> = ({ data, thingId }) => {
           ),
         {
           loading: "Loading...",
-          success: (data) => `Attributes updated successfully`,
+          success: () => `Attributes updated successfully`,
           error: "Error",
         },
       );
@@ -73,8 +54,8 @@ const AttributeEdit: React.FC<AttributeEditProps> = ({ data, thingId }) => {
       [key]: value,
     }));
   };
+
   const renderEditable = (value: any, path: string[], isEditing: boolean) => {
-    // Primitive
     if (value === null || value === undefined || typeof value !== "object") {
       return isEditing ? (
         <input
@@ -102,7 +83,6 @@ const AttributeEdit: React.FC<AttributeEditProps> = ({ data, thingId }) => {
       );
     }
 
-    // Object → recurse
     return (
       <div className="ml-3 mt-2 space-y-2 border-l border-sky-200 pl-3">
         {Object.entries(value).map(([k, v]) => (
@@ -121,7 +101,6 @@ const AttributeEdit: React.FC<AttributeEditProps> = ({ data, thingId }) => {
 
   return (
     <div className="relative w-1/2 p-6 bg-white/80 rounded-xl border border-sky-200 shadow-sm">
-      {/* Header Actions */}
       <div className="absolute top-4 right-4 flex gap-2">
         {!isEditing ? (
           <button

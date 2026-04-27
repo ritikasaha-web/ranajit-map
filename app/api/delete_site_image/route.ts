@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error("🚨 DITTO DELETE ERROR 🚨", {
+    console.error("DITTO DELETE ERROR", {
       message: error.message,
       data: error.response?.data,
     });
