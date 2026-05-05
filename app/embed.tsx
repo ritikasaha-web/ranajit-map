@@ -1,9 +1,14 @@
 import { createRoot } from "react-dom/client";
 import Page from "./page";
-
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+const queryClient = new QueryClient();
 export function renderTowerApp(container: HTMLElement, config?: any) {
   const root = createRoot(container);
-  root.render(<Page />);
+  root.render(
+    <QueryClientProvider client={queryClient}>
+      <Page />
+    </QueryClientProvider>,
+  );
 }
 
 // expose globally for PHP

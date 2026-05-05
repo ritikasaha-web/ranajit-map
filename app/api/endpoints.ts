@@ -69,6 +69,47 @@ export const getTwins = async (
 
   return allItems;
 };
+export const getTwinsWithFilter = async (
+  filter: string, // e.g. "gt(attributes/uptime,0)"
+  onChunkReceived: (newTowers: TwinItem[]) => void,
+): Promise<TwinItem[]> => {
+  const allItems: TwinItem[] = [];
+  let cursor: string | null = null;
+  let hasMore = true;
+
+  const batchSize = 200;
+
+  const fieldsFilter =
+    "fields=thingId,attributes/height_m,attributes/down_time,attributes/uptime,attributes/location/lat,attributes/location/lng";
+
+  while (hasMore) {
+    const cursorParam = cursor ? `,cursor(${cursor})` : "";
+    const filterParam = filter ? `&filter=${encodeURIComponent(filter)}` : "";
+
+    const endpoint = `search/things?${fieldsFilter}${filterParam}&option=size(${batchSize})${cursorParam}`;
+
+    try {
+      const response = await api.get(endpoint);
+      const responseData = response.data as PaginatedResponse;
+
+      const items = responseData.items;
+      const nextCursor = responseData.cursor;
+
+      if (items?.length) {
+        allItems.push(...items);
+        onChunkReceived(items);
+      }
+
+      cursor = nextCursor ?? null;
+      hasMore = !!nextCursor;
+    } catch (err) {
+      console.error("Error fetching twins with filter:", err);
+      break;
+    }
+  }
+
+  return allItems;
+};
 
 const EXCLUDED_KEYS = ["images"];
 

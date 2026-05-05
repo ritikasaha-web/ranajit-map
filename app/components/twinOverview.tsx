@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
 import {
   formatLabel,
   upperCaseSet,
@@ -44,7 +43,11 @@ const Accordion = ({
 };
 
 const twinOverview = () => {
-  const router = useRouter();
+  const router = {
+    push: (url: string) => {
+      window.location.href = url;
+    },
+  };
   const selectedTowerId = useTowerStore((s) => s.selectedTowerId);
   const { data: selectedTower } = useTower(selectedTowerId ?? undefined);
   const [uploadOpen, setUploadOpen] = useState(false);

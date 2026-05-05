@@ -1,15 +1,23 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
 import EditTwin from "@/app/components/common/editTwin";
 import { Button } from "@/components/ui/button";
 import { applyFormatting } from "@/app/constants/component_names";
 import { useTower } from "@/app/hooks/getTowers";
 
 const TowerDetails = () => {
-  const { id } = useParams<{ id: string }>();
+  const getIdFromUrl = () => {
+    const match = window.location.pathname.match(/\/tower\/([^/]+)/);
+    return match ? match[1] : null;
+  };
+
+  const id = getIdFromUrl();
   const towerName = decodeURIComponent(id);
-  const router = useRouter();
+  const router = {
+    push: (url: string) => {
+      window.location.href = url;
+    },
+  };
 
   const { data: twinData, isLoading, error } = useTower(towerName ?? undefined);
 

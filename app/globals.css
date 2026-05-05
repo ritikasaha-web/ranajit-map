@@ -114,11 +114,18 @@
 body {
   font-family: "Rubik", sans-serif;
   font-optical-sizing: auto;
+  margin: 0;
+  padding: 0;
 }
 
 @layer components {
   .dim-background {
     background-color: #0000007c;
+  }
+}
+@layer utilities {
+  .font-rubik {
+    font-family: "Rubik", sans-serif;
   }
 }
 .tower-tooltip-override {
