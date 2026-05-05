@@ -486,7 +486,36 @@ export default function FilterBar() {
                   {/* FIX #3: Just calls removeFilter — no parallel fetch */}
                   <button
                     type="button"
-                    onClick={() => removeFilter(f.id)}
+                    onClick={() => {
+                      const newFilters = filters.filter((x) => x.id !== f.id);
+                      setFilters(newFilters);
+
+                      const newFilterStr = buildDittoFilter(newFilters);
+
+                      if (newFilters.length === 0) {
+                        // no filters left → refetch all towers
+                        queryClient.invalidateQueries({
+                          queryKey: ["towers"],
+                          refetchType: "all",
+                        });
+                      } else {
+                        // re-fetch with remaining filters
+                        let accumulated: TwinItem[] = [];
+                        const existingIds = new Set<string>();
+
+                        getTwinsWithFilter(newFilterStr, (chunk) => {
+                          const uniqueChunk = chunk.filter((t: any) => {
+                            if (existingIds.has(t.thingId)) return false;
+                            existingIds.add(t.thingId);
+                            return true;
+                          });
+                          if (uniqueChunk.length > 0) {
+                            accumulated = [...accumulated, ...uniqueChunk];
+                            queryClient.setQueryData(["towers"], accumulated);
+                          }
+                        });
+                      }
+                    }}
                     className="w-4 h-4 rounded-full bg-blue-200/60 hover:bg-blue-200 flex items-center justify-center text-blue-500 text-xs ml-2 flex-shrink-0 transition-colors duration-100"
                   >
                     ×
