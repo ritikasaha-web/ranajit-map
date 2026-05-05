@@ -63,51 +63,8 @@ const FitMarkersBounds: React.FC<{ positions: [number, number][] }> = ({
 };
 
 const TowerMap = () => {
-  const [towers, setTowers] = useState<any[]>([]);
+  const { data: towers = [], isLoading } = useTowers();
   const [zoom, setZoom] = useState(5);
-
-  useEffect(() => {
-    // 1. Flag to prevent React Strict Mode from breaking things
-    let isMounted = true;
-
-    (async () => {
-      try {
-        await getTwins((newBatch) => {
-          // If the component unmounted (e.g., Strict Mode cleanup), ignore this batch
-          if (!isMounted) return;
-
-          // 2. Deduplicate directly against the REAL state
-          setTowers((prevTowers) => {
-            // Get all the IDs currently on the map
-            const existingIds = new Set(prevTowers.map((t) => t.thingId));
-
-            // Filter the incoming batch
-            const uniqueNewTowers = newBatch.filter((t: any) => {
-              if (existingIds.has(t.thingId)) {
-                return false; // Skip it! We already have it.
-              }
-              // Add it to the set so we also catch duplicates hiding within the same batch
-              existingIds.add(t.thingId);
-              return true;
-            });
-
-            // If nothing new survived the filter, don't update the state
-            if (uniqueNewTowers.length === 0) return prevTowers;
-
-            // Safely combine them
-            return [...prevTowers, ...uniqueNewTowers];
-          });
-        });
-      } catch (err) {
-        console.error("Error fetching towers:", err);
-      }
-    })();
-
-    // 3. Cleanup function for Strict Mode
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   const positions = useMemo(() => {
     return towers.map(
