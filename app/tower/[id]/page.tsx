@@ -1,5 +1,4 @@
 "use client";
-
 import EditTwin from "@/app/components/common/editTwin";
 import { Button } from "@/components/ui/button";
 import { applyFormatting } from "@/app/constants/component_names";
@@ -11,8 +10,9 @@ const TowerDetails = () => {
     return match ? match[1] : null;
   };
 
-  const id = getIdFromUrl();
-  const towerName = decodeURIComponent(id);
+  const id: string | null = getIdFromUrl();
+
+  const towerName = id ? decodeURIComponent(id) : undefined;
   const router = {
     push: (url: string) => {
       window.location.href = url;
