@@ -1,14 +1,14 @@
 import TwinOverview from "../twinOverview";
-import FilterBar from "../shared/filterTower";
-import dynamic from "next/dynamic";
+import React, { Suspense, lazy } from "react";
 
-const TowerMap = dynamic(() => import("./towerMap"), {
-  ssr: false,
-});
+const TowerMap = lazy(() => import("./towerMap"));
+
 const TowerView = () => {
   return (
     <div className="flex relative">
-      <TowerMap />
+      <Suspense fallback={null}>
+        <TowerMap />
+      </Suspense>
       <TwinOverview />
     </div>
   );

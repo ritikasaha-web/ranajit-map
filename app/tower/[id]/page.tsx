@@ -4,26 +4,20 @@ import EditTwin from "@/app/components/common/editTwin";
 import { Button } from "@/components/ui/button";
 import { applyFormatting } from "@/app/constants/component_names";
 import { useTower } from "@/app/hooks/getTowers";
+import React from "react";
 
-const TowerDetails = () => {
-  const getIdFromUrl = () => {
+interface TowerDetailsProps {
+  id?: string;
+}
+
+const TowerDetails = ({ id: propId }: TowerDetailsProps) => {
+  const towerName = propId ?? (() => {
     const match = window.location.pathname.match(/\/tower\/([^/]+)/);
-    return match ? match[1] : null;
-  };
+    return match ? decodeURIComponent(match[1]) : "";
+  })();
 
-  const id = getIdFromUrl();
-  const towerName = id ? decodeURIComponent(id) : "";
-  const router = {
-    push: (url: string) => {
-      window.location.href = url;
-    },
-  };
+  const { data: twinData, isLoading, error } = useTower(towerName || undefined);
 
-  const { data: twinData, isLoading, error } = useTower(towerName ?? undefined);
-
-  /* -----------------------------
-     Recursive Renderer (KEY FIX)
-  ----------------------------- */
   const renderRecursive = (data: any, parentKey?: string): React.ReactNode => {
     if (data === null || data === undefined)
       return <span className="opacity-50">—</span>;
@@ -135,14 +129,16 @@ const TowerDetails = () => {
           </section>
         </div>
 
-        {/* Edit Section (unchanged logic) */}
+        {/* Edit Section */}
         <section className="bg-white/80 rounded-xl border border-sky-200 shadow-sm p-4">
           <EditTwin data={twinData} />
         </section>
 
         {/* Quick Actions */}
         <div className="flex gap-3 justify-end">
-          <Button onClick={() => router.push(`/`)}>Back to Towers</Button>
+          <Button onClick={() => { window.location.hash = ""; }}>
+            Back to Towers
+          </Button>
 
           <Button
             variant="secondary"
@@ -170,22 +166,3 @@ const TowerDetails = () => {
 };
 
 export default TowerDetails;
-
-// const [twinData, setTwinData] = useState<any>(null);
-// const [loading, setLoading] = useState(true);
-// const [error, setError] = useState<string | null>(null);
-
-// useEffect(() => {
-//   const fetchTwin = async () => {
-//     try {
-//       const data = await getTwinById(towerName);
-//       setTwinData(data);
-//     } catch (err: any) {
-//       setError(err.message);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   fetchTwin();
-// }, [towerName]);

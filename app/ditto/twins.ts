@@ -102,7 +102,7 @@ export const getTwinsWithFilter = async (
 };
 
 export const getTwinById = async (id: string) => {
-  const response = await dittoApi.get(`/things/${id}`);
+  const response = await dittoApi.get(`things/${id}`);
   const data = response.data;
 
   if (data.attributes) {
@@ -118,7 +118,7 @@ export const getTwinById = async (id: string) => {
 
 export const listThings = async (): Promise<ThingDocument[]> => {
   const response = await dittoApi.get<ThingDocument | ThingDocument[]>(
-    "/things",
+    "things",
   );
   const data = response.data;
 
@@ -130,7 +130,7 @@ export const updateThingAttributes = async (
   attributes: Record<string, unknown>,
 ) => {
   const response = await dittoApi.patch(
-    `/things/${thingId}/attributes`,
+    `things/${thingId}/attributes`,
     attributes,
     {
       headers: {
@@ -145,10 +145,14 @@ export const updateThingFeatures = async (
   thingId: string,
   features: Record<string, unknown>,
 ) => {
-  const response = await dittoApi.patch(`/things/${thingId}/features`, features, {
-    headers: {
-      "Content-Type": "application/merge-patch+json",
+  const response = await dittoApi.patch(
+    `things/${thingId}/features`,
+    features,
+    {
+      headers: {
+        "Content-Type": "application/merge-patch+json",
+      },
     },
-  });
+  );
   return response.data;
 };

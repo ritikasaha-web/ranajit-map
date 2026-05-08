@@ -13,11 +13,13 @@ import {
   getMappedSiteImages,
   setDefaultSiteImage,
   deleteSiteImage,
-} from "@/app/ditto/endpoints";
-import { withCacheBust } from "@/app/ditto/imageUrls";
+} from "@/app/api/endpoints";
 
 // ✅ Added 'default' boolean to the Photo type
 type Photo = { id: number; label: string; url: string; default?: boolean };
+
+const bustUrl = (url: string, cb: number) =>
+  url.includes("?") ? `${url}&cb=${cb}` : `${url}?cb=${cb}`;
 
 const SitePhotos = () => {
   const setSitePhotosOpen = useSitePhotosStore((s) => s.setSitePhotosOpen);
@@ -65,7 +67,7 @@ const SitePhotos = () => {
   const selected = photos[selectedIndex]
     ? {
         ...photos[selectedIndex],
-        url: withCacheBust(photos[selectedIndex].url, dataUpdatedAt),
+        url: bustUrl(photos[selectedIndex].url, dataUpdatedAt),
       }
     : undefined;
 
@@ -364,7 +366,7 @@ const SitePhotos = () => {
                   }`}
                 >
                   <img
-                    src={withCacheBust(photo.url, dataUpdatedAt)}
+                    src={bustUrl(photo.url, dataUpdatedAt)}
                     alt={photo.label}
                     className="w-full h-full object-cover"
                   />

@@ -6,7 +6,7 @@ import { RxCross2 } from "react-icons/rx";
 import { useTowerStore } from "@/app/store/useTowerStore";
 import { useTower } from "@/app/hooks/getTowers";
 import { createPortal } from "react-dom";
-import { uploadSiteImages } from "@/app/ditto/endpoints";
+import { uploadSiteImages } from "@/app/api/endpoints";
 import { compressImage } from "@/app/constants/component_names";
 
 type Preview = { file: File; objectUrl: string };
@@ -85,7 +85,8 @@ const SiteUploadPhotos = ({ onClose }: { onClose: () => void }) => {
     try {
       // 1. Compress all images concurrently before sending
       const compressedFiles = await Promise.all(
-        previews.map((p) => compressImage(p.file, 800, 0.5, 45 * 1024)),
+        previews.map((p) => compressImage(p.file, 1280, 0.7)),
+        // 1280px max-width and 70% quality will drastically reduce file size
       );
 
       // 2. Send the compressed files to your API

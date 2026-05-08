@@ -1,8 +1,7 @@
-import { getMappedSiteImages } from "@/app/ditto/endpoints";
+import { getMappedSiteImages } from "@/app/api/endpoints";
 import React, { useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { formatDuration } from "@/app/constants/component_names";
-import { withCacheBust } from "@/app/ditto/imageUrls";
 interface TowerTooltipProps {
   thingId: string;
   down_time: number;
@@ -13,6 +12,9 @@ interface TowerTooltipProps {
   dg?: string;
   imageUrl?: string;
 }
+
+const bustUrl = (url: string, cb: number) =>
+  url.includes("?") ? `${url}&cb=${cb}` : `${url}?cb=${cb}`;
 
 const TowerTooltip = ({
   thingId,
@@ -46,7 +48,7 @@ const TowerTooltip = ({
     // 1. Look for a user-selected default image
     const defaultPhoto = photos.find((p: any) => p.default === true);
     if (defaultPhoto) {
-      return withCacheBust(defaultPhoto.url, dataUpdatedAt);
+      return bustUrl(defaultPhoto.url, dataUpdatedAt);
     }
 
     // 2. If no default exists, run the random selection
@@ -57,7 +59,7 @@ const TowerTooltip = ({
       randomIndexRef.current = Math.floor(Math.random() * photos.length);
     }
     const url = photos[randomIndexRef.current].url;
-    return withCacheBust(url, dataUpdatedAt);
+    return bustUrl(url, dataUpdatedAt);
   }, [photos, dataUpdatedAt]);
 
   const randomized = useMemo(

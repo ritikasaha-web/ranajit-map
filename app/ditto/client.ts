@@ -1,8 +1,7 @@
 import axios, { AxiosError } from "axios";
 
 export const dittoApi = axios.create({
-  baseURL:
-    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api/2/",
+  baseURL: "http://localhost:8080/api/2/",
   timeout: 30000,
   headers: {
     "Content-Type": "application/json",

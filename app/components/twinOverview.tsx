@@ -44,8 +44,8 @@ const Accordion = ({
 
 const twinOverview = () => {
   const router = {
-    push: (url: string) => {
-      window.location.href = url;
+    push: (path: string) => {
+      window.location.hash = path.startsWith("/") ? `#${path}` : path;
     },
   };
   const selectedTowerId = useTowerStore((s) => s.selectedTowerId);
