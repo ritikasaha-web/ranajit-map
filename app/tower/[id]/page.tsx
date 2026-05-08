@@ -12,7 +12,7 @@ const TowerDetails = () => {
   };
 
   const id = getIdFromUrl();
-  const towerName = decodeURIComponent(id);
+  const towerName = id ? decodeURIComponent(id) : "";
   const router = {
     push: (url: string) => {
       window.location.href = url;

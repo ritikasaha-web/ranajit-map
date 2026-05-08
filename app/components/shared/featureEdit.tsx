@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { updateThingFeatures } from "@/app/api/endpoints"; // adjust path
+import { updateThingFeatures } from "@/app/ditto/endpoints"; // adjust path
 
 interface FeatureEditProps {
   data?: any;

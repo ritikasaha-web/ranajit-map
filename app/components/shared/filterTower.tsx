@@ -1,4 +1,4 @@
-import { getTwinsWithFilter, TwinItem } from "@/app/api/endpoints";
+import { getTwinsWithFilter, TwinItem } from "@/app/ditto/endpoints";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 

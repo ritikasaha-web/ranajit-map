@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { updateThingAttributes } from "@/app/api/endpoints"; // adjust path
+import { updateThingAttributes } from "@/app/ditto/endpoints"; // adjust path
 
 interface AttributeEditProps {
   data: Record<string, any>;

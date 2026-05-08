@@ -11,7 +11,7 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { getTwinById, getTwins } from "../../api/endpoints";
+import { getTwinById, getTwins } from "../../ditto/endpoints";
 import TowerPreview from "../shared/towerPreview";
 import { useTowerStore } from "@/app/store/useTowerStore";
 import { useTower, useTowers } from "@/app/hooks/getTowers";
