@@ -35,10 +35,15 @@ export const getTwins = async (
   let hasMore = true;
 
   const batchSize = 200;
+  const limit: number = 500; // Infinity = fetch all
 
   while (hasMore) {
+    const remaining = Math.min(batchSize, limit - allItems.length);
+    if (remaining <= 0) break;
+
+    const fetchSize = Math.min(batchSize, remaining);
     const cursorParam = cursor ? `,cursor(${cursor})` : "";
-    const endpoint = `search/things?${TOWER_FIELDS}&option=size(${batchSize})${cursorParam}`;
+    const endpoint = `search/things?${TOWER_FIELDS}&option=size(${fetchSize})${cursorParam}`;
 
     try {
       const response = await dittoApi.get(endpoint);

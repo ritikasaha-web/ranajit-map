@@ -46,7 +46,7 @@ export const useTower = (id?: string | null) => {
     initialData: () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const towers = queryClient.getQueryData<any[]>(TOWER_KEYS.all);
-      return towers?.find((t) => t.id === id);
+      return towers?.find((t) => t.thingId === id);
     },
   });
 };

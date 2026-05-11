@@ -12,13 +12,19 @@ const TowerView = lazy(() => import("./components/common/towerView"));
 const page = () => {
   const openExpandTower = useExpandTowerStore((state) => state.openExpandTower);
   const isSitePhotosOpen = useSitePhotosStore((s) => s.isSitePhotosOpen);
-  const [hash, setHash] = useState(() => window.location.hash);
+  const [mounted, setMounted] = useState(false);
+  const [hash, setHash] = useState("");
 
   useEffect(() => {
+    setMounted(true);
+    setHash(window.location.hash);
+
     const onHashChange = () => setHash(window.location.hash);
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
+
+  if (!mounted) return null;
 
   const towerMatch = hash.match(/^#\/tower\/(.+)$/);
   if (towerMatch) {
@@ -28,7 +34,6 @@ const page = () => {
   return (
     <div className="relative">
       {isSitePhotosOpen && <SitePhotos />}
-
       {openExpandTower && <ExpandTowerPreview />}
       <div className="absolute top-2 left-10 z-9999">
         <FilterBar />
