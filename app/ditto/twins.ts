@@ -35,7 +35,7 @@ export const getTwins = async (
   let hasMore = true;
 
   const batchSize = 200;
-  const limit: number = 500; // Infinity = fetch all
+  const limit: number = 3000; // Infinity = fetch all
 
   while (hasMore) {
     const remaining = Math.min(batchSize, limit - allItems.length);
