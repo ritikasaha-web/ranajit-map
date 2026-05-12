@@ -540,7 +540,6 @@ const InnerMap: React.FC<InnerMapProps> = ({
     <>
       <ZoomWatcher setZoom={setZoom} />
       <FitMarkersBounds positions={positions} />
-      <AlarmRings towers={towers} />
       {towers.length > 0 && (
         <CanvasIconLayer
           towers={towers}
