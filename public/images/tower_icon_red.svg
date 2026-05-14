@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 400" width="100%" height="100%">
+  <!-- Antenna Bulb -->
+  <circle cx="100" cy="30" r="12" fill="#FF0000" />
+  
+  <!-- Antenna Mast -->
+  <polygon points="94,40 106,40 112,85 88,85" fill="#FF0000" />
+  
+  <!-- Platform -->
+  <rect x="62" y="85" width="76" height="24" rx="3" fill="none" stroke="#FF0000" stroke-width="14" />
+  
+  <!-- Main Legs -->
+  <line x1="79" y1="110" x2="40" y2="360" stroke="#FF0000" stroke-width="13" stroke-linecap="round" />
+  <line x1="121" y1="110" x2="160" y2="360" stroke="#FF0000" stroke-width="13" stroke-linecap="round" />
+
+  <!-- X Bracing -->
+  <!-- Segment 1 -->
+  <line x1="79" y1="110" x2="130.75" y2="172.5" stroke="#FF0000" stroke-width="12" stroke-linecap="round" />
+  <line x1="121" y1="110" x2="69.25" y2="172.5" stroke="#FF0000" stroke-width="12" stroke-linecap="round" />
+  
+  <!-- Segment 2 -->
+  <line x1="69.25" y1="172.5" x2="140.5" y2="235" stroke="#FF0000" stroke-width="12" stroke-linecap="round" />
+  <line x1="130.75" y1="172.5" x2="59.5" y2="235" stroke="#FF0000" stroke-width="12" stroke-linecap="round" />
+  
+  <!-- Segment 3 -->
+  <line x1="59.5" y1="235" x2="150.25" y2="297.5" stroke="#FF0000" stroke-width="12" stroke-linecap="round" />
+  <line x1="140.5" y1="235" x2="49.75" y2="297.5" stroke="#FF0000" stroke-width="12" stroke-linecap="round" />
+  
+  <!-- Segment 4 -->
+  <line x1="49.75" y1="297.5" x2="160" y2="360" stroke="#FF0000" stroke-width="12" stroke-linecap="round" />
+  <line x1="150.25" y1="297.5" x2="40" y2="360" stroke="#FF0000" stroke-width="12" stroke-linecap="round" />
+
+  <!-- Base Plates -->
+  <line x1="25" y1="365" x2="55" y2="365" stroke="#FF0000" stroke-width="14" stroke-linecap="round" />
+  <line x1="145" y1="365" x2="175" y2="365" stroke="#FF0000" stroke-width="14" stroke-linecap="round" />
+</svg>

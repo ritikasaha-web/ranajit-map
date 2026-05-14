@@ -1,9 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  getTwinById,
-  getTwins,
-  TwinItem,
-} from "../ditto/endpoints";
+import { getTwinById, getTwins, TwinItem } from "../ditto/endpoints";
 
 const TOWER_KEYS = {
   all: ["towers"] as const,
@@ -32,19 +28,18 @@ export const useTowers = () => {
   });
 };
 
+// app/hooks/getTowers.ts (or wherever useTower lives)
+
 export const useTower = (id?: string | null) => {
   const queryClient = useQueryClient();
 
-  // Existing tower detail consumers expect a loose Ditto document shape.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return useQuery<any, Error>({
     queryKey: id ? TOWER_KEYS.detail(id) : [],
     queryFn: () => getTwinById(id as string),
     enabled: !!id,
 
-    // reuse data from tower list if already cached
-    initialData: () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // USE THIS INSTEAD OF initialData
+    placeholderData: () => {
       const towers = queryClient.getQueryData<any[]>(TOWER_KEYS.all);
       return towers?.find((t) => t.thingId === id);
     },

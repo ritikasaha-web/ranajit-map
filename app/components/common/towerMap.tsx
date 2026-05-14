@@ -7,9 +7,8 @@ import React, {
   useRef,
   useCallback,
 } from "react";
-import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, useMap, Popup } from "react-leaflet";
 import L from "leaflet";
-import * as ReactDOMClient from "react-dom/client";
 import "leaflet/dist/leaflet.css";
 
 import { useTowerStore } from "@/app/store/useTowerStore";
@@ -37,14 +36,6 @@ interface TooltipState {
   x: number;
   y: number;
 }
-
-// ─── Alarm-ring div icon ──────────────────────────────────────────────────────
-const alarmDivIcon = L.divIcon({
-  className: "custom-div-icon",
-  html: `<div class="alarm-circle"></div>`,
-  iconSize: [40, 40],
-  iconAnchor: [19, 50],
-});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ZoomWatcher
@@ -80,33 +71,7 @@ const FitMarkersBounds: React.FC<{ positions: [number, number][] }> = ({
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AlarmRings — one alarm-circle marker per green tower (same as original)
-// ─────────────────────────────────────────────────────────────────────────────
-const AlarmRings: React.FC<{ towers: Tower[] }> = ({ towers }) => (
-  <>
-    {towers
-      .filter((t) => t.attributes.down_time === 0)
-      .map((t) => (
-        <Marker
-          key={`alarm-${t.thingId}`}
-          position={[t.attributes.location.lat, t.attributes.location.lng]}
-          icon={alarmDivIcon}
-          interactive={false}
-        />
-      ))}
-  </>
-);
-
-// ─────────────────────────────────────────────────────────────────────────────
 // CanvasIconLayer
-//
-// Renders all tower icons onto a single <canvas> using the browser's 2D API.
-// Zero extra npm packages. Works in every bundler including Turbopack.
-// Handles 40k points smoothly — one drawImage call per tower per frame.
-//
-// Hit-testing on mousemove/click is a simple bounding-box check over the
-// towers array. For datasets > 20k you can swap this for an RBush spatial
-// index, but the loop is fast enough for typical viewport counts.
 // ─────────────────────────────────────────────────────────────────────────────
 interface CanvasIconLayerProps {
   towers: Tower[];
@@ -131,10 +96,10 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
 }) => {
   const map = useMap();
 
-  // Keep callbacks stable — layer captures them once at mount
   const onHoverRef = useRef(onHover);
   const onHoverOffRef = useRef(onHoverOff);
   const onClickRef = useRef(onClick);
+
   useEffect(() => {
     onHoverRef.current = onHover;
   }, [onHover]);
@@ -148,23 +113,17 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
   useEffect(() => {
     if (!towers.length) return;
 
-    // ── Load icon images (with error fallback to colored circles) ──────────
     const greenImg = new Image();
     const redImg = new Image();
     let imagesReady = 0;
     let useFallback = false;
 
-    // ── Canvas setup ────────────────────────────────────────────────────────
     const canvas = document.createElement("canvas");
-    canvas.style.cssText =
-      "position:absolute;top:0;left:0;pointer-events:none;z-index:400;";
+    // 1. Removed strict z-index so Leaflet's pane system takes control
+    canvas.style.cssText = "position:absolute;pointer-events:none;";
     const ctx = canvas.getContext("2d")!;
     const dpr = window.devicePixelRatio || 1;
 
-    // ── Cached pixel positions ─────────────────────────────────────────────
-    // latLngToContainerPoint is the single biggest cost in hot paths.
-    // Compute every tower's pixel position once per pan/zoom and reuse
-    // for both drawing and hit-testing.
     let pixelPositions: Float32Array = new Float32Array(towers.length * 2);
     let positionsDirty = true;
 
@@ -184,7 +143,6 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
       positionsDirty = false;
     };
 
-    // ── Draw all towers (uses cached positions) ────────────────────────────
     const drawNow = () => {
       if (imagesReady < 2 && !useFallback) return;
       if (positionsDirty) recomputePositions();
@@ -194,10 +152,14 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
       canvas.style.height = size.y + "px";
       canvas.width = Math.round(size.x * dpr);
       canvas.height = Math.round(size.y * dpr);
+
+      // 2. Keep the canvas perfectly aligned with the viewport when panning
+      const topLeft = map.containerPointToLayerPoint([0, 0]);
+      L.DomUtil.setPosition(canvas, topLeft);
+
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, size.x, size.y);
 
-      // Off-screen culling bounds (pad by icon size)
       const minX = -iconWidth;
       const maxX = size.x + iconWidth;
       const minY = -iconHeight;
@@ -206,7 +168,6 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
       for (let i = 0; i < towers.length; i++) {
         const px = pixelPositions[i * 2];
         const py = pixelPositions[i * 2 + 1];
-        // Skip towers outside the viewport — biggest single perf win
         if (px < minX || px > maxX || py < minY || py > maxY) continue;
 
         const tower = towers[i];
@@ -232,9 +193,6 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
       }
     };
 
-    // ── RAF-throttled draw ─────────────────────────────────────────────────
-    // Multiple Leaflet "move" events fire during a single drag — coalesce
-    // them into one paint per animation frame.
     let rafId: number | null = null;
     const draw = () => {
       if (rafId !== null) return;
@@ -249,9 +207,6 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
       draw();
     };
     const onImgError = () => {
-      console.warn(
-        "[TowerMap] Tower icon PNG failed to load — falling back to colored circles",
-      );
       useFallback = true;
       draw();
     };
@@ -263,11 +218,9 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
     greenImg.src = greenIconUrl;
     redImg.src = redIconUrl;
 
-    // ── Hit-test using cached pixel positions ──────────────────────────────
     const hitTest = (containerPt: L.Point): Tower | null => {
       if (positionsDirty) recomputePositions();
       const halfW = iconWidth / 2;
-      // Iterate from last to first so towers drawn on top win the hit-test
       for (let i = towers.length - 1; i >= 0; i--) {
         const px = pixelPositions[i * 2];
         const py = pixelPositions[i * 2 + 1];
@@ -283,14 +236,11 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
       return null;
     };
 
-    // ── Map event handlers ──────────────────────────────────────────────────
-    // Mark positions dirty on pan/zoom so they get recomputed on next draw/hit
     const onMove = () => {
       positionsDirty = true;
       draw();
     };
 
-    // RAF-throttle the mousemove — at most one hit-test per frame
     let mouseRafId: number | null = null;
     let pendingMouseEvent: L.LeafletMouseEvent | null = null;
     const onMouseMove = (e: L.LeafletMouseEvent) => {
@@ -314,16 +264,14 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
 
     const onMapClick = (e: L.LeafletMouseEvent) => {
       const found = hitTest(e.containerPoint);
-      if (found) {
-        onClickRef.current(found, e.latlng);
-      }
+      if (found) onClickRef.current(found, e.latlng);
     };
 
-    // IMPORTANT: Append canvas directly to map CONTAINER, not to a pane.
-    // Leaflet transforms its panes during pan/zoom; the canvas draws in
-    // container coordinates, so a transformed parent would shift icons
-    // off-screen. The container itself is never transformed.
-    map.getContainer().appendChild(canvas);
+    // 3. Inject canvas into the Marker Pane (z-index 600) instead of the Map Container
+    // This allows the React-Leaflet Popup (z-index 700) to naturally render on top!
+    const pane = map.getPane("markerPane");
+    if (pane) pane.appendChild(canvas);
+
     map.on("move zoom viewreset resize moveend zoomend", onMove);
     map.on("mousemove", onMouseMove);
     map.on("click", onMapClick);
@@ -335,17 +283,15 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
       map.off("move zoom viewreset resize moveend zoomend", onMove);
       map.off("mousemove", onMouseMove);
       map.off("click", onMapClick);
-      canvas.remove();
+      if (pane) pane.removeChild(canvas);
       map.getContainer().style.cursor = "";
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, towers, greenIconUrl, redIconUrl, iconWidth, iconHeight]);
 
   return null;
 };
-
 // ─────────────────────────────────────────────────────────────────────────────
-// GlobalTooltip — one positioned div shown on hover
+// GlobalTooltip
 // ─────────────────────────────────────────────────────────────────────────────
 const GlobalTooltip: React.FC<{ state: TooltipState | null }> = ({ state }) => {
   if (!state) return null;
@@ -372,144 +318,7 @@ const GlobalTooltip: React.FC<{ state: TooltipState | null }> = ({ state }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// usePopupController — single native L.popup with React content inside
-// ─────────────────────────────────────────────────────────────────────────────
-function usePopupController(
-  mapRef: React.RefObject<L.Map | null>,
-  selectedTower: Tower | undefined,
-  onClose: () => void,
-) {
-  const popupRef = useRef<L.Popup | null>(null);
-  const rootRef = useRef<ReactDOMClient.Root | null>(null);
-  const containerEl = useRef<HTMLDivElement | null>(null);
-  const activeTower = useRef<Tower | null>(null);
-  const onCloseRef = useRef(onClose);
-
-  useEffect(() => {
-    onCloseRef.current = onClose;
-  }, [onClose]);
-
-  const renderContent = useCallback((tower: Tower, latestData?: Tower) => {
-    if (!containerEl.current) return;
-    if (!rootRef.current) {
-      rootRef.current = ReactDOMClient.createRoot(containerEl.current);
-    }
-
-    rootRef.current.render(
-      <div style={{ width: 450 }}>
-        {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            padding: "8px 12px",
-            borderBottom: "1px solid #eee",
-          }}
-        >
-          <strong style={{ fontSize: 13 }}>{tower.thingId}</strong>
-          <button
-            onClick={() => popupRef.current?.remove()}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              fontSize: 18,
-              lineHeight: 1,
-              padding: "0 2px",
-            }}
-          >
-            ×
-          </button>
-        </div>
-
-        {/* Body */}
-        <div
-          style={{
-            width: 420,
-            maxHeight: 450,
-            overflowY: "auto",
-            padding: "0 12px 12px",
-          }}
-        >
-          {!latestData ||
-          latestData.thingId !== tower.thingId ||
-          !latestData.features?.components ? (
-            <div className="p-4 text-sm text-gray-500">
-              Loading tower details…
-            </div>
-          ) : (
-            <TowerPreview
-              structureType={latestData.attributes.structure_type}
-              installationType={latestData.attributes.installation_type}
-              components={latestData.features.components.properties ?? {}}
-              uptime={latestData.attributes.uptime}
-              down_time={latestData.attributes.down_time}
-            />
-          )}
-        </div>
-      </div>,
-    );
-  }, []);
-
-  // Re-render when full tower data arrives from API
-  useEffect(() => {
-    if (
-      activeTower.current &&
-      selectedTower?.thingId === activeTower.current.thingId
-    ) {
-      renderContent(activeTower.current, selectedTower);
-    }
-  }, [selectedTower, renderContent]);
-
-  const open = useCallback(
-    (tower: Tower, latlng: L.LatLng) => {
-      if (!mapRef.current) return;
-      activeTower.current = tower;
-
-      if (!containerEl.current) {
-        containerEl.current = document.createElement("div");
-      }
-
-      renderContent(tower);
-
-      if (popupRef.current) {
-        popupRef.current.off("remove");
-        popupRef.current.remove();
-      }
-
-      popupRef.current = L.popup({
-        closeButton: false,
-        maxWidth: 460,
-        className: "tower-global-popup",
-        autoPan: true,
-      })
-        .setLatLng(latlng)
-        .setContent(containerEl.current)
-        .openOn(mapRef.current);
-
-      popupRef.current.on("remove", () => {
-        activeTower.current = null;
-        onCloseRef.current();
-      });
-    },
-    [mapRef, renderContent],
-  );
-
-  const close = useCallback(() => {
-    if (popupRef.current) {
-      popupRef.current.off("remove");
-      popupRef.current.remove();
-      popupRef.current = null;
-      activeTower.current = null;
-    }
-  }, []);
-
-  return { open, close };
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// InnerMap — child of <MapContainer> so useMap() works
+// InnerMap
 // ─────────────────────────────────────────────────────────────────────────────
 interface InnerMapProps {
   towers: Tower[];
@@ -563,6 +372,10 @@ const TowerMap = () => {
   const { data: towers = [] } = useTowers();
   const [zoom, setZoom] = useState(5);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const [activePopup, setActivePopup] = useState<{
+    tower: Tower;
+    latlng: L.LatLng;
+  } | null>(null);
 
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -585,9 +398,8 @@ const TowerMap = () => {
 
   const handleClose = useCallback(() => {
     setSelectedTowerId(null as unknown as string);
+    setActivePopup(null);
   }, [setSelectedTowerId]);
-
-  const popup = usePopupController(mapRef, selectedTower, handleClose);
 
   const handleHover = useCallback((tower: Tower, x: number, y: number) => {
     if (hoverTimer.current) clearTimeout(hoverTimer.current);
@@ -602,10 +414,10 @@ const TowerMap = () => {
   const handleTowerClick = useCallback(
     (tower: Tower, latlng: L.LatLng) => {
       setSelectedTowerId(tower.thingId);
-      popup.open(tower, latlng);
+      setActivePopup({ tower, latlng });
       setTooltip(null);
     },
-    [setSelectedTowerId, popup],
+    [setSelectedTowerId],
   );
 
   return (
@@ -629,6 +441,7 @@ const TowerMap = () => {
           noWrap={true}
           attribution="&copy; OSM &copy; CARTO"
         />
+
         <InnerMap
           towers={towers as Tower[]}
           positions={positions}
@@ -638,6 +451,37 @@ const TowerMap = () => {
           onHoverOff={handleHoverOff}
           onTowerClick={handleTowerClick}
         />
+
+        {/* Native React-Leaflet Popup rendered based on click state */}
+        {activePopup && (
+          <Popup
+            position={activePopup.latlng}
+            eventHandlers={{ remove: handleClose }}
+            className="w-[450px] h-[450px] z-9999"
+            minWidth={450}
+          >
+            <strong>{activePopup.tower.thingId}</strong>
+            <div className="w-[420px] h-[450px] overflow-auto">
+              {!selectedTower ||
+              selectedTower.thingId !== activePopup.tower.thingId ||
+              !selectedTower.features?.components ? (
+                <div className="p-4 text-sm text-gray-500">
+                  Loading tower details…
+                  {activePopup.tower.thingId}
+                  {selectedTower.thingId}
+                </div>
+              ) : (
+                <TowerPreview
+                  structureType={selectedTower.attributes.structure_type}
+                  installationType={selectedTower.attributes.installation_type}
+                  components={selectedTower.features.components.properties}
+                  uptime={selectedTower.attributes.uptime}
+                  down_time={selectedTower.attributes.down_time}
+                />
+              )}
+            </div>
+          </Popup>
+        )}
       </MapContainer>
 
       <GlobalTooltip state={tooltip} />
