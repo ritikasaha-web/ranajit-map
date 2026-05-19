@@ -16,6 +16,8 @@ import { useTower, useTowers } from "@/app/hooks/getTowers";
 import TowerTooltip from "@/app/components/shared/TowerTooltip";
 import TowerPreview from "../shared/towerPreview";
 import MapLegend from "../shared/mapLegend";
+// import tower_green_icon from "/ranajit_map/images/tower_icon_green.png";
+// import tower_red_icon from "/ranajit_map/images/tower_icon_red.png";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Tower {
@@ -352,8 +354,10 @@ const InnerMap: React.FC<InnerMapProps> = ({
       {towers.length > 0 && (
         <CanvasIconLayer
           towers={towers}
-          greenIconUrl="/images/tower_icon_green.png"
-          redIconUrl="/images/tower_icon_red.png"
+          // greenIconUrl={tower_green_icon.src}
+          // redIconUrl={tower_red_icon.src}
+          greenIconUrl="https://dev-citadel.codez.co.in/ranajit_map/images/tower_icon_green.png"
+          redIconUrl="https://dev-citadel.codez.co.in/ranajit_map/images/tower_icon_red.png"
           iconWidth={24}
           iconHeight={32}
           onHover={onHover}

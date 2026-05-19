@@ -284,7 +284,10 @@ export const compressImage = (
               outputQuality = Math.max(0.25, outputQuality - 0.1);
             } else {
               width = Math.max(240, Math.round(width * 0.85));
-              height = Math.max(1, Math.round((img.height * width) / img.width));
+              height = Math.max(
+                1,
+                Math.round((img.height * width) / img.width),
+              );
             }
           } while (blob.size > maxBytes && width > 240);
 

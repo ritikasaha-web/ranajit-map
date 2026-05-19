@@ -300,7 +300,11 @@ const TowerTooltip = ({
         }}
       >
         <img
-          src={image || "images/tower_stock_images/tower3.jpg"}
+          src={
+            image ||
+            // "/towervision_toc/ranajit_map/images/tower_stock_images/tower3.jpg"
+            "https://dev-citadel.codez.co.in/ranajit_map/images/tower_stock_images/tower3.jpg"
+          }
           alt="Tower"
           style={{
             maxWidth: "100%",

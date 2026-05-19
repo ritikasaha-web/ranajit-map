@@ -1,7 +1,10 @@
+// import online_icon from "@/public/images/tower_icon_green.png";
+// import risk_icon from "@/public/images/tower_icon_orange.png";
+// import down_icon from "@/public/images/tower_icon_red.png";
 const MapLegend = () => {
   const items = [
     {
-      icon: "/images/tower_icon_green.png",
+      icon: "https://dev-citadel.codez.co.in/ranajit_map/images/tower_icon_green.png",
       label: "Online",
       sub: "No downtime",
       color: "#16a34a",
@@ -13,7 +16,7 @@ const MapLegend = () => {
     //   color: "#ea580c",
     // },
     {
-      icon: "/images/tower_icon_red.png",
+      icon: "https://dev-citadel.codez.co.in/ranajit_map/images/tower_icon_red.png",
       label: "Down",
       sub: "> 20 min down",
       color: "#dc2626",

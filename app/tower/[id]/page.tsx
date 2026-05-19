@@ -4,6 +4,7 @@ import EditTwin from "@/app/components/common/editTwin";
 import { Button } from "@/components/ui/button";
 import { applyFormatting } from "@/app/constants/component_names";
 import { useTower } from "@/app/hooks/getTowers";
+import logo from "@/public/images/logo.png";
 import React from "react";
 
 interface TowerDetailsProps {
@@ -11,10 +12,12 @@ interface TowerDetailsProps {
 }
 
 const TowerDetails = ({ id: propId }: TowerDetailsProps) => {
-  const towerName = propId ?? (() => {
-    const match = window.location.pathname.match(/\/tower\/([^/]+)/);
-    return match ? decodeURIComponent(match[1]) : "";
-  })();
+  const towerName =
+    propId ??
+    (() => {
+      const match = window.location.pathname.match(/\/tower\/([^/]+)/);
+      return match ? decodeURIComponent(match[1]) : "";
+    })();
 
   const { data: twinData, isLoading, error } = useTower(towerName || undefined);
 
@@ -75,11 +78,7 @@ const TowerDetails = ({ id: propId }: TowerDetailsProps) => {
       {/* ---------------- HEADER ---------------- */}
       <header className="sticky top-0 z-30 bg-white/70 backdrop-blur border-b border-sky-200">
         <div className="relative flex items-center justify-center py-4 px-6">
-          <img
-            src="/images/logo.png"
-            alt="Logo"
-            className="h-10 absolute left-6"
-          />
+          <img src={logo.src} alt="Logo" className="h-10 absolute left-6" />
           <h1 className="text-2xl font-semibold tracking-wide">{thingId}</h1>
         </div>
       </header>
@@ -136,7 +135,11 @@ const TowerDetails = ({ id: propId }: TowerDetailsProps) => {
 
         {/* Quick Actions */}
         <div className="flex gap-3 justify-end">
-          <Button onClick={() => { window.location.hash = ""; }}>
+          <Button
+            onClick={() => {
+              window.location.hash = "";
+            }}
+          >
             Back to Towers
           </Button>
 

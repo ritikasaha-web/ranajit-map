@@ -1,5 +1,5 @@
 "use client";
-
+import tower_image from "@/public/images/tower_image.png";
 export default function TowerView({ twin }) {
   const height = twin?.attributes?.height_m || 100; // tower height in meters
 
@@ -22,7 +22,7 @@ export default function TowerView({ twin }) {
         }}
       >
         <img
-          src="/tower2.png"
+          src={tower_image.src}
           alt="Tower"
           className="object-contain"
           style={{
