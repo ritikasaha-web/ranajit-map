@@ -1,15 +1,32 @@
 # Ditto — Tower Digital Twin Viewer
 
-A Next.js app that connects to an Eclipse Ditto backend to display, filter, and manage telecom tower digital twins on an interactive map.
+A Next.js application that connects to an Eclipse Ditto backend to display, filter, and manage telecom tower digital twins on an interactive map. The project supports two flows: a standalone direct API mode (`main`) and a Citadel/PHP embedded integration mode (`ditto-for-php`).
 
 ---
 
 ## Branches
 
-| Branch          | Purpose                                                                                                                                                  |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `main`          | Production. Talks directly to the Ditto API via axios from the Next.js client.                                                                           |
-| `ditto-for-php` | In-progress. Integrating a PHP middleware layer between the frontend and Ditto. Vast divergence from main — do not merge without reconciling both sides. |
+| Branch          | Purpose                                                                                                                                                                                                              |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `main`          | Base branch. Talks directly to the Ditto API via axios from the Next.js client. Not optimised for large datasets.                                                                                                    |
+| `ditto-for-php` | **Active production branch.** Built specifically for embedding into the Citadel PHP codebase. Holds the live production Ditto API, supports ~10k sites without lag, and contains all Citadel-specific modifications. |
+
+### Why does `ditto-for-php` exist?
+
+The goal of this branch is to embed the Ditto tower viewer **directly inside the Citadel PHP application** — not as an iframe, but as a proper bundle included in the page.
+
+The integration works like this:
+
+1. Run `npx vite build` on the `ditto-for-php` branch.
+2. Vite produces a single JS file, a single CSS file, and any accompanying assets inside a `dist/` folder.
+3. Those output files are dropped into the Citadel codebase and included via standard `<script>` and `<link>` tags — the app renders as part of the Citadel page.
+
+This branch also carries performance modifications not present in `main`:
+
+- The local Docker-based Ditto instance holds ~10k tower sites.
+- The `ditto-for-php` branch is specifically tuned to handle that volume without UI lag. `main` has none of these optimisations.
+
+> Do not merge `ditto-for-php` into `main` without carefully reconciling both sides — the two branches have diverged significantly.
 
 ---
 
@@ -147,11 +164,62 @@ Site images go through Next.js API routes → /public/uploads/site_image/<siteId
 
 ---
 
-## Key Config
+## Key Configuration
 
-- **Ditto endpoint:** hardcoded in `app/ditto/client.ts` (`codez-ditto.duckdns.org:8443`)
-- **Ditto endpoint:** hosted ip is 138.201.137.244:3000 and production ip is 138.201.137.244:5500
-  locally running on localhost:8080(run the docker container locally first, apis saved on postman collection)
+| Config                        | Value                                                                 |
+| ----------------------------- | --------------------------------------------------------------------- |
+| Ditto endpoint (DNS)          | `codez-ditto.duckdns.org:8443` — hardcoded in `app/ditto/client.ts`   |
+| Ditto endpoint (hosted)       | `138.201.137.244:3000`                                                |
+| Ditto endpoint (production)   | `138.201.137.244:5500`                                                |
+| Ditto endpoint (local Docker) | `localhost:8080` — start the Docker container first; holds ~10k sites |
+| Image API base URL            | `NEXT_PUBLIC_API_BASE_URL` env var, used in `app/api/client.ts`       |
+| Auth                          | Basic auth `ditto:ditto` (base64 encoded in both clients)             |
+| API collection                | Saved in Postman                                                      |
 
-- **Image API base URL:** `NEXT_PUBLIC_API_BASE_URL` env var, used in `app/api/client.ts`
-- **Auth:** Basic auth `ditto:ditto` (base64 encoded in both clients)
+### Production Server Access
+
+The production server runs at `138.201.137.244`. Access credentials and the process for SSHing into the server are not stored in this repository — **contact the team** to get onboarded with server access.
+
+---
+
+## Citadel / PHP Integration (`ditto-for-php` branch)
+
+### How It Works
+
+The Ditto viewer is embedded into Citadel **as a bundle** — not via an iframe. The React app is compiled by Vite into a self-contained JS + CSS output that Citadel loads directly on the page, giving a seamless embedded experience.
+
+### Build Steps
+
+```bash
+# From the ditto-for-php branch root
+npx vite build
+```
+
+This outputs a `dist/` folder with:
+
+- One compiled JS file
+- One compiled CSS file
+- Any referenced static assets
+
+Copy these files into the appropriate locations in the Citadel codebase and include them with standard `<script>` and `<link>` tags.
+
+### Caveats to Keep in Mind
+
+- **Vite builds React, not Next.js.** `npx vite build` only bundles the React layer. Next.js-specific features (server components, API routes, middleware) are not included in the output.
+- **Next.js API routes are excluded.** Features that depend on the `app/api/` route handlers (image upload, image listing, etc.) will not work inside the Citadel bundle unless those APIs are hosted and called separately.
+- **Only the React-side works end-to-end** in the Citadel integration. This is sufficient for the current integration scope.
+
+---
+
+## Image Path Handling (`ditto-for-php` branch)
+
+The `ditto-for-php` branch includes custom image path handling required for the Citadel integration:
+
+- Some path changes are directly active in code; older/reference paths may still appear as commented-out lines for deployment and debugging purposes.
+- Two `uploads` folders exist in this branch: one **inside** `public/` and one **outside** `public/`. This is intentional — it reflects how Next.js API-served images vs. statically served images are handled in the integrated setup.
+
+---
+
+## Unused / Experimental Code
+
+The `other/` directory holds files that are no longer part of the active application — old map implementations, Cesium globe experiments, legacy JSX component versions, and unused routes. Kept for reference only.

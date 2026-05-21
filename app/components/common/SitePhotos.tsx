@@ -405,6 +405,8 @@ const SitePhotos = () => {
 
 export default SitePhotos;
 
+//for static site iamges..... ->>
+
 // "use client";
 
 // import React, { useState, useEffect } from "react";
