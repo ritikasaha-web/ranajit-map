@@ -2,6 +2,10 @@ import { getMappedSiteImages } from "@/app/api/endpoints";
 import React, { useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { formatDuration } from "@/app/constants/component_names";
+import { STATIC_PHOTOS } from "@/app/constants/component_names"; //static photos
+
+// inside the component, replace the useQuery block:
+
 interface TowerTooltipProps {
   thingId: string;
   down_time: number;
@@ -40,7 +44,18 @@ const TowerTooltip = ({
     queryFn: () => getMappedSiteImages(thingId),
     enabled: !!thingId,
   });
+  //from here for static photos
+  // const siteId = thingId.includes(":") ? thingId.split(":").pop()! : thingId;
+  // const isStatic = !!siteId && siteId in STATIC_PHOTOS;
 
+  // const { data: fetchedPhotos = [], dataUpdatedAt } = useQuery({
+  //   queryKey: ["siteImages", thingId],
+  //   queryFn: () => getMappedSiteImages(thingId),
+  //   enabled: !!thingId && !isStatic,
+  // });
+
+  // const photos = isStatic ? STATIC_PHOTOS[siteId] : fetchedPhotos;
+  //till here
   // ✅ UPDATED LOGIC: Prioritize Default Image, fallback to Random
   const image = useMemo(() => {
     if (!photos.length) return null;

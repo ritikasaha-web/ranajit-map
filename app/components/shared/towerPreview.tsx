@@ -76,30 +76,30 @@ const TowerPreview = ({
       componentSetMap[structureType] ?? monopoleComponentSet;
     const anchors = anchorMap[structureType] ?? anchorMap.monopole;
 
-    const base: ComponentLayer[] = [
-      {
-        src: `https://dev-citadel.codez.co.in/ranajit_map/${baseTypes[installationType]}.webp`,
-        id: "__base__",
-        anchor: { x: 50, y: 50 },
-      },
-      {
-        src: `https://dev-citadel.codez.co.in/ranajit_map/${structureType}/${structureType}.webp`,
-        id: "__structure__",
-        anchor: { x: 50, y: 50 },
-      },
-    ];
     // const base: ComponentLayer[] = [
     //   {
-    //     src: `/towervision_toc/ranajit_map/${baseTypes[installationType]}.webp`,
+    //     src: `https://dev-citadel.codez.co.in/ranajit_map/${baseTypes[installationType]}.webp`,
     //     id: "__base__",
     //     anchor: { x: 50, y: 50 },
     //   },
     //   {
-    //     src: `/towervision_toc/ranajit_map/${structureType}/${structureType}.webp`,
+    //     src: `https://dev-citadel.codez.co.in/ranajit_map/${structureType}/${structureType}.webp`,
     //     id: "__structure__",
     //     anchor: { x: 50, y: 50 },
     //   },
     // ];
+    const base: ComponentLayer[] = [
+      {
+        src: `/${baseTypes[installationType]}.webp`,
+        id: "__base__",
+        anchor: { x: 50, y: 50 },
+      },
+      {
+        src: `/${structureType}/${structureType}.webp`,
+        id: "__structure__",
+        anchor: { x: 50, y: 50 },
+      },
+    ];
 
     const componentLayers: ComponentLayer[] = [];
     for (const key of towerComponents) {
@@ -108,14 +108,14 @@ const TowerPreview = ({
       if (typeof value === "string" && value.trim() === "") continue;
       if (typeof value === "number" && value < 0) continue;
 
-      // const src =
-      //   key === "cable" && typeof value !== "number"
-      //     ? `/towervision_toc/ranajit_map/${structureType}/cable_${value}.webp`
-      //     : `/towervision_toc/ranajit_map/${structureType}/${key}.webp`;
       const src =
         key === "cable" && typeof value !== "number"
-          ? `https://dev-citadel.codez.co.in/ranajit_map/${structureType}/cable_${value}.webp`
-          : `https://dev-citadel.codez.co.in/ranajit_map/${structureType}/${key}.webp`;
+          ? `/${structureType}/cable_${value}.webp`
+          : `/${structureType}/${key}.webp`;
+      // const src =
+      //   key === "cable" && typeof value !== "number"
+      //     ? `https://dev-citadel.codez.co.in/ranajit_map/${structureType}/cable_${value}.webp`
+      //     : `https://dev-citadel.codez.co.in/ranajit_map/${structureType}/${key}.webp`;
 
       componentLayers.push({
         src,
