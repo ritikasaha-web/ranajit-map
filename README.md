@@ -222,4 +222,4 @@ The `ditto-for-php` branch includes custom image path handling required for the 
 
 ## Unused / Experimental Code
 
-The `other/` directory holds files that are no longer part of the active application — old map implementations, Cesium globe experiments, legacy JSX component versions, and unused routes. Kept for reference only.
+The `other/` directory holds files that are no longer part of the active application — old map implementations, Cesium globe experiments, legacy JSX component versions, and unused routes. Kept for reference only. And the `iframe/` is also unused for few testing purposes, can safely remove that or keep it for reference.
