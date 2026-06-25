@@ -3,8 +3,9 @@
 import { getTwinsWithFilter, TwinItem } from "@/app/ditto/twins";
 import { useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTowerStore } from "@/app/store/useTowerStore";
 
-type SiteFilter = "all" | "up" | "down";
+type SiteFilter = "all" | "up" | "down" | "critical_fault" | "high_temp";
 
 const SITE_OPTIONS: {
   id: SiteFilter;
@@ -72,6 +73,47 @@ const SITE_OPTIONS: {
     ),
     filter: "gt(attributes/down_time,0)",
   },
+  {
+    id: "critical_fault",
+    label: "Critical Faults",
+    icon: (
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <path
+          d="M6 1.5L1 10.5h10L6 1.5z"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M6 5v2.5"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+        <circle cx="6" cy="9" r="0.6" fill="currentColor" />
+      </svg>
+    ),
+    filter: "eq(attributes/critical_fault,true)",
+  },
+  {
+    id: "high_temp",
+    label: "High Temperature",
+    icon: (
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <rect
+          x="4.5"
+          y="1"
+          width="3"
+          height="6.5"
+          rx="1.5"
+          stroke="currentColor"
+          strokeWidth="1.3"
+        />
+        <circle cx="6" cy="9.5" r="1.5" stroke="currentColor" strokeWidth="1.3" />
+      </svg>
+    ),
+    filter: "gt(attributes/temperature,40)",
+  },
 ];
 
 async function fetchFilteredTwins(
@@ -96,6 +138,7 @@ async function fetchFilteredTwins(
 
 export default function FilterBar() {
   const queryClient = useQueryClient();
+  const setActiveSiteFilter = useTowerStore((s) => s.setActiveSiteFilter);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<SiteFilter>("all");
   const [loading, setLoading] = useState(false);
@@ -138,9 +181,10 @@ export default function FilterBar() {
   const handleSelect = useCallback(
     async (id: SiteFilter) => {
       setActive(id);
+      setActiveSiteFilter(id);
       await runFilter(id);
     },
-    [runFilter],
+    [runFilter, setActiveSiteFilter],
   );
 
   return (

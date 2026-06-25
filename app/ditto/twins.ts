@@ -10,6 +10,8 @@ export interface TwinItem {
       lat: number;
       lng: number;
     };
+    critical_fault?: boolean;
+    temperature?: number;
   };
 }
 
@@ -25,7 +27,7 @@ export type ThingDocument = Record<string, unknown> & {
 const EXCLUDED_KEYS = ["images"];
 
 const TOWER_FIELDS =
-  "fields=thingId,attributes/height_m,attributes/down_time,attributes/uptime,attributes/location/lat,attributes/location/lng";
+  "fields=thingId,attributes/height_m,attributes/down_time,attributes/uptime,attributes/location/lat,attributes/location/lng,attributes/critical_fault,attributes/temperature";
 
 export const getTwins = async (
   onChunkReceived: (newTowers: TwinItem[]) => void,

@@ -29,6 +29,8 @@ interface Tower {
     height_m: number;
     structure_type: string;
     installation_type: string;
+    critical_fault?: boolean;
+    temperature?: number;
   };
   features?: { components?: { properties?: Record<string, unknown> } };
 }
@@ -79,6 +81,7 @@ interface CanvasIconLayerProps {
   towers: Tower[];
   greenIconUrl: string;
   redIconUrl: string;
+  activeFilter: string;
   iconWidth?: number;
   iconHeight?: number;
   onHover: (tower: Tower, x: number, y: number) => void;
@@ -90,6 +93,7 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
   towers,
   greenIconUrl,
   redIconUrl,
+  activeFilter,
   iconWidth = 24,
   iconHeight = 32,
   onHover,
@@ -101,16 +105,16 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
   const onHoverRef = useRef(onHover);
   const onHoverOffRef = useRef(onHoverOff);
   const onClickRef = useRef(onClick);
+  const activeFilterRef = useRef(activeFilter);
+  const drawRef = useRef<(() => void) | null>(null);
 
+  useEffect(() => { onHoverRef.current = onHover; }, [onHover]);
+  useEffect(() => { onHoverOffRef.current = onHoverOff; }, [onHoverOff]);
+  useEffect(() => { onClickRef.current = onClick; }, [onClick]);
   useEffect(() => {
-    onHoverRef.current = onHover;
-  }, [onHover]);
-  useEffect(() => {
-    onHoverOffRef.current = onHoverOff;
-  }, [onHoverOff]);
-  useEffect(() => {
-    onClickRef.current = onClick;
-  }, [onClick]);
+    activeFilterRef.current = activeFilter;
+    drawRef.current?.();
+  }, [activeFilter]);
 
   useEffect(() => {
     if (!towers.length) return;
@@ -167,15 +171,26 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
       const minY = -iconHeight;
       const maxY = size.y + iconHeight;
 
+      const f = activeFilterRef.current;
       for (let i = 0; i < towers.length; i++) {
         const px = pixelPositions[i * 2];
         const py = pixelPositions[i * 2 + 1];
         if (px < minX || px > maxX || py < minY || py > maxY) continue;
 
         const tower = towers[i];
+        const isRed =
+          f === "up"
+            ? false
+            : f === "critical_fault"
+              ? tower.attributes.critical_fault === true
+              : f === "high_temp"
+                ? (tower.attributes.temperature ?? 0) > 40
+                : tower.attributes.down_time !== 0 ||
+                  tower.attributes.critical_fault === true ||
+                  (tower.attributes.temperature ?? 0) > 40;
+
         if (useFallback) {
-          ctx.fillStyle =
-            tower.attributes.down_time === 0 ? "#22c55e" : "#ef4444";
+          ctx.fillStyle = isRed ? "#ef4444" : "#22c55e";
           ctx.strokeStyle = "#fff";
           ctx.lineWidth = 2;
           ctx.beginPath();
@@ -183,7 +198,7 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
           ctx.fill();
           ctx.stroke();
         } else {
-          const img = tower.attributes.down_time === 0 ? greenImg : redImg;
+          const img = isRed ? redImg : greenImg;
           ctx.drawImage(
             img,
             px - iconWidth / 2,
@@ -203,6 +218,7 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
         drawNow();
       });
     };
+    drawRef.current = draw;
 
     const onImgLoad = () => {
       imagesReady++;
@@ -280,6 +296,7 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
     draw();
 
     return () => {
+      drawRef.current = null;
       if (rafId !== null) cancelAnimationFrame(rafId);
       if (mouseRafId !== null) cancelAnimationFrame(mouseRafId);
       map.off("move zoom viewreset resize moveend zoomend", onMove);
@@ -327,6 +344,7 @@ interface InnerMapProps {
   positions: [number, number][];
   mapRef: React.RefObject<L.Map | null>;
   setZoom: (z: number) => void;
+  activeFilter: string;
   onHover: (tower: Tower, x: number, y: number) => void;
   onHoverOff: () => void;
   onTowerClick: (tower: Tower, latlng: L.LatLng) => void;
@@ -337,6 +355,7 @@ const InnerMap: React.FC<InnerMapProps> = ({
   positions,
   mapRef,
   setZoom,
+  activeFilter,
   onHover,
   onHoverOff,
   onTowerClick,
@@ -354,10 +373,9 @@ const InnerMap: React.FC<InnerMapProps> = ({
       {towers.length > 0 && (
         <CanvasIconLayer
           towers={towers}
-          // greenIconUrl={tower_green_icon.src}
-          // redIconUrl={tower_red_icon.src}
           greenIconUrl="https://dev-citadel.codez.co.in/ranajit_map/images/tower_icon_green.png"
           redIconUrl="https://dev-citadel.codez.co.in/ranajit_map/images/tower_icon_red.png"
+          activeFilter={activeFilter}
           iconWidth={24}
           iconHeight={32}
           onHover={onHover}
@@ -386,6 +404,8 @@ const TowerMap = () => {
 
   const selectedTowerId = useTowerStore((s) => s.selectedTowerId);
   const setSelectedTowerId = useTowerStore((s) => s.setSelectedTowerId);
+  const activeSiteFilter = useTowerStore((s) => s.activeSiteFilter);
+  const setIsSidebarOpen = useTowerStore((s) => s.setIsSidebarOpen);
   const { data: selectedTower } = useTower(selectedTowerId ?? undefined);
 
   const positions = useMemo(
@@ -400,10 +420,16 @@ const TowerMap = () => {
     [towers],
   );
 
+  // Keep popup in sync
+  useEffect(() => {
+    if (!selectedTowerId) setActivePopup(null);
+  }, [selectedTowerId]);
+
   const handleClose = useCallback(() => {
-    setSelectedTowerId(null as unknown as string);
     setActivePopup(null);
-  }, [setSelectedTowerId]);
+    setIsSidebarOpen(false);
+    setTimeout(() => setSelectedTowerId(null), 300);
+  }, [setSelectedTowerId, setIsSidebarOpen]);
 
   const handleHover = useCallback((tower: Tower, x: number, y: number) => {
     if (hoverTimer.current) clearTimeout(hoverTimer.current);
@@ -418,14 +444,15 @@ const TowerMap = () => {
   const handleTowerClick = useCallback(
     (tower: Tower, latlng: L.LatLng) => {
       setSelectedTowerId(tower.thingId);
+      setIsSidebarOpen(true);
       setActivePopup({ tower, latlng });
       setTooltip(null);
     },
-    [setSelectedTowerId],
+    [setSelectedTowerId, setIsSidebarOpen],
   );
 
   return (
-    <div className="w-[70%] h-screen" style={{ position: "relative" }}>
+    <div className="w-full h-screen" style={{ position: "relative" }}>
       <MapContainer
         style={{ width: "100%", height: "100%" }}
         center={[22.5, 80]}
@@ -451,6 +478,7 @@ const TowerMap = () => {
           positions={positions}
           mapRef={mapRef}
           setZoom={setZoom}
+          activeFilter={activeSiteFilter}
           onHover={handleHover}
           onHoverOff={handleHoverOff}
           onTowerClick={handleTowerClick}
@@ -471,8 +499,6 @@ const TowerMap = () => {
               !selectedTower.features?.components ? (
                 <div className="p-4 text-sm text-gray-500">
                   Loading tower details…
-                  {activePopup.tower.thingId}
-                  {selectedTower.thingId}
                 </div>
               ) : (
                 <TowerPreview

@@ -3,6 +3,10 @@ import { create } from "zustand";
 type TowerStore = {
   selectedTowerId: string | null;
   setSelectedTowerId: (id: string | null) => void;
+  activeSiteFilter: string;
+  setActiveSiteFilter: (filter: string) => void;
+  isSidebarOpen: boolean;
+  setIsSidebarOpen: (open: boolean) => void;
 };
 type ExpandTowerStore = {
   openExpandTower: boolean;
@@ -21,6 +25,10 @@ interface UploadStore {
 export const useTowerStore = create<TowerStore>((set) => ({
   selectedTowerId: null,
   setSelectedTowerId: (id) => set({ selectedTowerId: id }),
+  activeSiteFilter: "all",
+  setActiveSiteFilter: (filter) => set({ activeSiteFilter: filter }),
+  isSidebarOpen: false,
+  setIsSidebarOpen: (open) => set({ isSidebarOpen: open }),
 }));
 export const useExpandTowerStore = create<ExpandTowerStore>((set) => ({
   openExpandTower: false,

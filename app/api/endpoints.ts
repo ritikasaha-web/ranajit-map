@@ -18,6 +18,8 @@ export interface TwinItem {
       lat: number;
       lng: number;
     };
+    critical_fault?: boolean;
+    temperature?: number;
   };
 }
 
