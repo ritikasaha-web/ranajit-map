@@ -7,7 +7,7 @@ import React, {
   useRef,
   useCallback,
 } from "react";
-import { MapContainer, TileLayer, useMap, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, useMap, Popup, Marker } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -383,6 +383,26 @@ const InnerMap: React.FC<InnerMapProps> = ({
           onClick={onTowerClick}
         />
       )}
+
+      {/* Pulsating ring for towers that are up */}
+      {towers
+        .filter((tower) => tower.attributes.down_time === 0)
+        .map((tower) => (
+          <Marker
+            key={`alarm-${tower.thingId}`}
+            position={[
+              tower.attributes.location.lat,
+              tower.attributes.location.lng,
+            ]}
+            interactive={false}
+            icon={L.divIcon({
+              className: "custom-div-icon",
+              html: `<div class="alarm-circle"></div>`,
+              iconSize: [40, 40],
+              iconAnchor: [12.5, 50],
+            })}
+          />
+        ))}
     </>
   );
 };
