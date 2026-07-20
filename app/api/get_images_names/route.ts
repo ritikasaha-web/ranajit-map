@@ -112,7 +112,7 @@ export async function GET(req: NextRequest) {
 
     // Force absolute URL for server-side Axios request
     const response = await api.get(attrPath, {
-      baseURL: process.env.API_BASE_URL || "http://localhost:8080/api/2/",
+      baseURL: process.env.API_BASE_URL || "http://138.201.137.244:5500/api/2/",
     });
 
     const images = response.data || [];
