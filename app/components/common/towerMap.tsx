@@ -77,6 +77,29 @@ const FitMarkersBounds: React.FC<{ positions: [number, number][] }> = ({
 // ─────────────────────────────────────────────────────────────────────────────
 // CanvasIconLayer
 // ─────────────────────────────────────────────────────────────────────────────
+const drawStatusBadge = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  radius: number,
+  color: string,
+  glyph: string,
+) => {
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = "#fff";
+  ctx.stroke();
+
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 7px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(glyph, x, y + 0.5);
+};
+
 interface CanvasIconLayerProps {
   towers: Tower[];
   greenIconUrl: string;
@@ -105,14 +128,12 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
   const onHoverRef = useRef(onHover);
   const onHoverOffRef = useRef(onHoverOff);
   const onClickRef = useRef(onClick);
-  const activeFilterRef = useRef(activeFilter);
   const drawRef = useRef<(() => void) | null>(null);
 
   useEffect(() => { onHoverRef.current = onHover; }, [onHover]);
   useEffect(() => { onHoverOffRef.current = onHoverOff; }, [onHoverOff]);
   useEffect(() => { onClickRef.current = onClick; }, [onClick]);
   useEffect(() => {
-    activeFilterRef.current = activeFilter;
     drawRef.current?.();
   }, [activeFilter]);
 
@@ -171,23 +192,15 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
       const minY = -iconHeight;
       const maxY = size.y + iconHeight;
 
-      const f = activeFilterRef.current;
       for (let i = 0; i < towers.length; i++) {
         const px = pixelPositions[i * 2];
         const py = pixelPositions[i * 2 + 1];
         if (px < minX || px > maxX || py < minY || py > maxY) continue;
 
         const tower = towers[i];
-        const isRed =
-          f === "up"
-            ? false
-            : f === "critical_fault"
-              ? tower.attributes.critical_fault === true
-              : f === "high_temp"
-                ? (tower.attributes.temperature ?? 0) > 40
-                : tower.attributes.down_time !== 0 ||
-                  tower.attributes.critical_fault === true ||
-                  (tower.attributes.temperature ?? 0) > 40;
+        // Colour reflects up/down only — critical fault / high temp are
+        // surfaced as badges instead, so an "up" tower always reads green.
+        const isRed = tower.attributes.down_time !== 0;
 
         if (useFallback) {
           ctx.fillStyle = isRed ? "#ef4444" : "#22c55e";
@@ -206,6 +219,24 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
             iconWidth,
             iconHeight,
           );
+        }
+
+        // ── Status badges (bottom-right corner of the icon) ──
+        const hasCriticalFault = tower.attributes.critical_fault === true;
+        const hasHighTemp = (tower.attributes.temperature ?? 0) > 40;
+
+        if (hasCriticalFault || hasHighTemp) {
+          const badgeR = 5;
+          const badgeX = px + iconWidth / 2 - 3;
+          let badgeY = py - 3;
+
+          if (hasCriticalFault) {
+            drawStatusBadge(ctx, badgeX, badgeY, badgeR, "#dc2626", "!");
+            badgeY -= badgeR * 2 + 2;
+          }
+          if (hasHighTemp) {
+            drawStatusBadge(ctx, badgeX, badgeY, badgeR, "#f97316", "H");
+          }
         }
       }
     };
