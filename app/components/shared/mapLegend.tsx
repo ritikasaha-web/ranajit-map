@@ -27,12 +27,11 @@ const MapLegend = () => {
   ];
 
   return (
-    <div className="absolute font-rubik bottom-2 left-4 z-[1000] rounded-full bg-white/5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] px-2 py-1 flex items-center gap-1.5 flex-wrap max-w-[92vw]">
+    <div className="absolute font-rubik bottom-2 left-4 z-[1000] bg-transparent px-2 py-1 flex items-center gap-1.5 flex-wrap max-w-[92vw]">
       {items.map(({ icon, label, color }) => (
         <div
           key={label}
-          className="flex items-center gap-1.5 rounded-full pl-1.5 pr-3 py-0.5"
-          style={{ backgroundColor: `${color}14` }}
+          className="flex items-center gap-1.5 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)] pl-1.5 pr-3 py-0.5"
         >
           <img
             src={icon}
@@ -48,13 +47,10 @@ const MapLegend = () => {
         </div>
       ))}
 
-      <span className="w-px h-4 bg-black/[0.06] shrink-0 mx-0.5" />
-
       {badges.map(({ glyph, color, label }) => (
         <div
           key={label}
-          className="flex items-center gap-1.5 rounded-full pl-1 pr-3 py-0.5"
-          style={{ backgroundColor: `${color}14` }}
+          className="flex items-center gap-1.5 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)] pl-1 pr-3 py-0.5"
         >
           <span
             className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white shrink-0 shadow-sm"
