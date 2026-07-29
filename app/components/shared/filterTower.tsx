@@ -182,6 +182,7 @@ export default function FilterBar() {
     async (id: SiteFilter) => {
       setActive(id);
       setActiveSiteFilter(id);
+      setOpen(false);
       await runFilter(id);
     },
     [runFilter, setActiveSiteFilter],
@@ -199,7 +200,7 @@ export default function FilterBar() {
         }
       `}</style>
 
-      <div className="absolute font-rubik top-0 left-3 z-[1000] w-52 rounded-[20px] bg-white/90 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] overflow-visible font-sans">
+      <div className="absolute font-rubik top-0 left-3 z-[1000] w-52 rounded-[20px] bg-white/40 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] overflow-visible font-sans">
         {/* Header / Toggle */}
         <button
           type="button"

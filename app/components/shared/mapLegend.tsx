@@ -6,7 +6,6 @@ const MapLegend = () => {
     {
       icon: "https://dev-citadel.codez.co.in/ranajit_map/images/tower_icon_green.png",
       label: "Online",
-      sub: "No downtime",
       color: "#16a34a",
     },
     // {
@@ -18,7 +17,6 @@ const MapLegend = () => {
     {
       icon: "https://dev-citadel.codez.co.in/ranajit_map/images/tower_icon_red.png",
       label: "Down",
-      sub: "> 20 min down",
       color: "#dc2626",
     },
   ];
@@ -29,52 +27,49 @@ const MapLegend = () => {
   ];
 
   return (
-    <div className="absolute bottom-6 left-4 z-[1000] rounded-xl shadow-lg border border-sky-200 bg-white overflow-hidden min-w-[160px]">
-      {/* Blue top accent bar */}
-      <div className="h-[3px] bg-gradient-to-r from-sky-500 to-blue-400" />
+    <div className="absolute font-rubik bottom-2 left-4 z-[1000] rounded-full bg-white/5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] px-2 py-1 flex items-center gap-1.5 flex-wrap max-w-[92vw]">
+      {items.map(({ icon, label, color }) => (
+        <div
+          key={label}
+          className="flex items-center gap-1.5 rounded-full pl-1.5 pr-3 py-0.5"
+          style={{ backgroundColor: `${color}14` }}
+        >
+          <img
+            src={icon}
+            alt={label}
+            className="w-3.5 h-5 object-contain shrink-0"
+          />
+          <span
+            className="text-[11px] font-normal whitespace-nowrap tracking-tight"
+            style={{ color }}
+          >
+            {label}
+          </span>
+        </div>
+      ))}
 
-      <div className="px-4 py-3 flex flex-col gap-2.5">
-        <p className="text-[9px] uppercase tracking-widest text-sky-400 font-semibold border-b border-sky-100 pb-1.5">
-          Tower Status
-        </p>
+      <span className="w-px h-4 bg-black/[0.06] shrink-0 mx-0.5" />
 
-        {items.map(({ icon, label, sub, color }) => (
-          <div key={label} className="flex items-center gap-3">
-            <img
-              src={icon}
-              alt={label}
-              className="w-5 h-7 object-contain shrink-0"
-            />
-            <div>
-              <p
-                className="text-xs font-semibold leading-none"
-                style={{ color }}
-              >
-                {label}
-              </p>
-              <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>
-            </div>
-          </div>
-        ))}
-
-        <p className="text-[9px] uppercase tracking-widest text-sky-400 font-semibold border-b border-t border-sky-100 py-1.5 mt-0.5">
-          Badges
-        </p>
-
-        {badges.map(({ glyph, color, label }) => (
-          <div key={label} className="flex items-center gap-3">
-            <span
-              className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
-              style={{ backgroundColor: color }}
-            >
-              {glyph}
-            </span>
-            <p className="text-xs font-semibold leading-none text-slate-700">
-              {label}
-            </p>
-          </div>
-        ))}
-      </div>
+      {badges.map(({ glyph, color, label }) => (
+        <div
+          key={label}
+          className="flex items-center gap-1.5 rounded-full pl-1 pr-3 py-0.5"
+          style={{ backgroundColor: `${color}14` }}
+        >
+          <span
+            className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white shrink-0 shadow-sm"
+            style={{ backgroundColor: color }}
+          >
+            {glyph}
+          </span>
+          <span
+            className="text-[11px] font-normal whitespace-nowrap tracking-tight"
+            style={{ color }}
+          >
+            {label}
+          </span>
+        </div>
+      ))}
     </div>
   );
 };
