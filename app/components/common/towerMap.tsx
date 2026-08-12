@@ -7,12 +7,13 @@ import React, {
   useRef,
   useCallback,
 } from "react";
-import { MapContainer, TileLayer, useMap, Popup, Marker } from "react-leaflet";
+import { MapContainer, TileLayer, useMap, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 import { useTowerStore } from "@/app/store/useTowerStore";
 import { useTower, useTowers } from "@/app/hooks/getTowers";
+import { isValidIndianSiteLocation } from "@/app/utils/indiaBounds";
 import TowerTooltip from "@/app/components/shared/TowerTooltip";
 import TowerPreview from "../shared/towerPreview";
 import MapLegend from "../shared/mapLegend";
@@ -67,8 +68,7 @@ const FitMarkersBounds: React.FC<{ positions: [number, number][] }> = ({
   useEffect(() => {
     if (positions.length && !fitted.current) {
       fitted.current = true;
-      const group = L.featureGroup(positions.map((p) => L.marker(p)));
-      map.fitBounds(group.getBounds(), { padding: [20, 20] });
+      map.fitBounds(L.latLngBounds(positions), { padding: [20, 20] });
     }
   }, [map, positions]);
   return null;
@@ -100,11 +100,37 @@ const drawStatusBadge = (
   ctx.fillText(glyph, x, y + 0.5);
 };
 
+// Pulse rings only render when at most this many up-towers are visible in
+// the viewport. Zoomed out (thousands visible) they'd be unreadable noise
+// AND a per-frame cost multiplier — so the map stays static there, and
+// the animation kicks in automatically once the user zooms into an area
+// with few enough towers to make individual rings meaningful.
+const MAX_PULSE_RINGS = 300;
+const PULSE_CYCLE_MS = 1500;
+const PULSE_COLOR = "#01c001";
+const drawPulseRing = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  nowMs: number,
+) => {
+  const t = Math.min((nowMs % PULSE_CYCLE_MS) / PULSE_CYCLE_MS / 0.8, 1);
+  const scale = 0.5 + t;
+  const opacity = 0.8 * (1 - t);
+  if (opacity <= 0) return;
+  ctx.beginPath();
+  ctx.arc(x, y, 12.5 * scale, 0, Math.PI * 2);
+  ctx.strokeStyle = PULSE_COLOR;
+  ctx.lineWidth = 3 * scale;
+  ctx.globalAlpha = opacity;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+};
+
 interface CanvasIconLayerProps {
   towers: Tower[];
   greenIconUrl: string;
   redIconUrl: string;
-  activeFilter: string;
   iconWidth?: number;
   iconHeight?: number;
   onHover: (tower: Tower, x: number, y: number) => void;
@@ -116,7 +142,6 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
   towers,
   greenIconUrl,
   redIconUrl,
-  activeFilter,
   iconWidth = 24,
   iconHeight = 32,
   onHover,
@@ -128,14 +153,10 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
   const onHoverRef = useRef(onHover);
   const onHoverOffRef = useRef(onHoverOff);
   const onClickRef = useRef(onClick);
-  const drawRef = useRef<(() => void) | null>(null);
 
   useEffect(() => { onHoverRef.current = onHover; }, [onHover]);
   useEffect(() => { onHoverOffRef.current = onHoverOff; }, [onHoverOff]);
   useEffect(() => { onClickRef.current = onClick; }, [onClick]);
-  useEffect(() => {
-    drawRef.current?.();
-  }, [activeFilter]);
 
   useEffect(() => {
     if (!towers.length) return;
@@ -153,6 +174,16 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
 
     let pixelPositions: Float32Array = new Float32Array(towers.length * 2);
     let positionsDirty = true;
+    // Index of the tower currently under the cursor (-1 = none) — used to
+    // draw a highlight halo so the user can tell which tower the hover
+    // tooltip belongs to in dense areas.
+    const hoveredIdxRef = { current: -1 };
+    // Screen positions of visible up-towers, collected during the icon
+    // pass so rings can be drawn (or skipped wholesale) afterwards.
+    const ringPositions = new Float32Array(MAX_PULSE_RINGS * 2);
+    let ringsAnimating = false;
+    let forceRedraw = true;
+    let lastHoveredDrawn = -1;
 
     const recomputePositions = () => {
       if (pixelPositions.length !== towers.length * 2) {
@@ -170,7 +201,7 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
       positionsDirty = false;
     };
 
-    const drawNow = () => {
+    const drawNow = (nowMs: number) => {
       if (imagesReady < 2 && !useFallback) return;
       if (positionsDirty) recomputePositions();
 
@@ -191,6 +222,8 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
       const maxX = size.x + iconWidth;
       const minY = -iconHeight;
       const maxY = size.y + iconHeight;
+
+      let upVisibleCount = 0;
 
       for (let i = 0; i < towers.length; i++) {
         const px = pixelPositions[i * 2];
@@ -221,6 +254,16 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
           );
         }
 
+        // Collect visible up-tower positions; rings are drawn after the
+        // loop only if the total stays within the animation budget.
+        if (!isRed) {
+          if (upVisibleCount < MAX_PULSE_RINGS) {
+            ringPositions[upVisibleCount * 2] = px;
+            ringPositions[upVisibleCount * 2 + 1] = py - iconHeight - 5.5;
+          }
+          upVisibleCount++;
+        }
+
         // ── Status badges (bottom-right corner of the icon) ──
         const hasCriticalFault = tower.attributes.critical_fault === true;
         const hasHighTemp = (tower.attributes.temperature ?? 0) > 40;
@@ -239,25 +282,67 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
           }
         }
       }
+
+      // Pulse rings, budget-gated: skipped entirely when too many
+      // up-towers are on screen (see MAX_PULSE_RINGS). ringsAnimating
+      // feeds back into the ticker — when false, the map stops
+      // re-rendering every frame and goes fully static until the next
+      // pan/zoom/hover.
+      ringsAnimating = upVisibleCount > 0 && upVisibleCount <= MAX_PULSE_RINGS;
+      if (ringsAnimating) {
+        for (let r = 0; r < upVisibleCount; r++) {
+          drawPulseRing(
+            ctx,
+            ringPositions[r * 2],
+            ringPositions[r * 2 + 1],
+            nowMs,
+          );
+        }
+      }
+
+      // Highlight halo around the hovered tower, drawn last so it stays
+      // visible above neighbouring icons in dense clusters.
+      const hi = hoveredIdxRef.current;
+      if (hi >= 0 && hi < towers.length) {
+        const hx = pixelPositions[hi * 2];
+        const hy = pixelPositions[hi * 2 + 1];
+        ctx.beginPath();
+        ctx.arc(hx, hy - iconHeight / 2, iconWidth * 0.9, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(2,132,199,0.15)";
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#0284c7";
+        ctx.stroke();
+      }
     };
 
+    // Redraw only when something actually changed: the viewport moved,
+    // the hovered tower changed, or rings are actively animating (which
+    // the draw itself reports via ringsAnimating). An idle zoomed-out map
+    // with rings over budget does no canvas work at all.
+    const FRAME_INTERVAL_MS = 1000 / 24;
     let rafId: number | null = null;
-    const draw = () => {
-      if (rafId !== null) return;
-      rafId = requestAnimationFrame(() => {
-        rafId = null;
-        drawNow();
-      });
+    let lastDrawMs = 0;
+    const tick = (nowMs: number) => {
+      if (nowMs - lastDrawMs >= FRAME_INTERVAL_MS) {
+        const hoverChanged = hoveredIdxRef.current !== lastHoveredDrawn;
+        if (forceRedraw || positionsDirty || ringsAnimating || hoverChanged) {
+          lastDrawMs = nowMs;
+          forceRedraw = false;
+          drawNow(nowMs);
+          lastHoveredDrawn = hoveredIdxRef.current;
+        }
+      }
+      rafId = requestAnimationFrame(tick);
     };
-    drawRef.current = draw;
 
     const onImgLoad = () => {
       imagesReady++;
-      draw();
+      forceRedraw = true;
     };
     const onImgError = () => {
       useFallback = true;
-      draw();
+      forceRedraw = true;
     };
 
     greenImg.onload = onImgLoad;
@@ -267,7 +352,7 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
     greenImg.src = greenIconUrl;
     redImg.src = redIconUrl;
 
-    const hitTest = (containerPt: L.Point): Tower | null => {
+    const hitTest = (containerPt: L.Point): number => {
       if (positionsDirty) recomputePositions();
       const halfW = iconWidth / 2;
       for (let i = towers.length - 1; i >= 0; i--) {
@@ -279,15 +364,14 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
           containerPt.y >= py - iconHeight &&
           containerPt.y <= py
         ) {
-          return towers[i];
+          return i;
         }
       }
-      return null;
+      return -1;
     };
 
     const onMove = () => {
       positionsDirty = true;
-      draw();
     };
 
     let mouseRafId: number | null = null;
@@ -300,9 +384,14 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
         const ev = pendingMouseEvent;
         pendingMouseEvent = null;
         if (!ev) return;
-        const found = hitTest(ev.containerPoint);
-        if (found) {
-          onHoverRef.current(found, ev.containerPoint.x, ev.containerPoint.y);
+        const foundIdx = hitTest(ev.containerPoint);
+        hoveredIdxRef.current = foundIdx;
+        if (foundIdx >= 0) {
+          onHoverRef.current(
+            towers[foundIdx],
+            ev.containerPoint.x,
+            ev.containerPoint.y,
+          );
           map.getContainer().style.cursor = "pointer";
         } else {
           onHoverOffRef.current();
@@ -312,8 +401,14 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
     };
 
     const onMapClick = (e: L.LeafletMouseEvent) => {
-      const found = hitTest(e.containerPoint);
-      if (found) onClickRef.current(found, e.latlng);
+      const foundIdx = hitTest(e.containerPoint);
+      if (foundIdx >= 0) onClickRef.current(towers[foundIdx], e.latlng);
+    };
+
+    const onMouseOut = () => {
+      hoveredIdxRef.current = -1;
+      onHoverOffRef.current();
+      map.getContainer().style.cursor = "";
     };
 
     // 3. Inject canvas into the Marker Pane (z-index 600) instead of the Map Container
@@ -323,15 +418,16 @@ const CanvasIconLayer: React.FC<CanvasIconLayerProps> = ({
 
     map.on("move zoom viewreset resize moveend zoomend", onMove);
     map.on("mousemove", onMouseMove);
+    map.on("mouseout", onMouseOut);
     map.on("click", onMapClick);
-    draw();
+    rafId = requestAnimationFrame(tick);
 
     return () => {
-      drawRef.current = null;
       if (rafId !== null) cancelAnimationFrame(rafId);
       if (mouseRafId !== null) cancelAnimationFrame(mouseRafId);
       map.off("move zoom viewreset resize moveend zoomend", onMove);
       map.off("mousemove", onMouseMove);
+      map.off("mouseout", onMouseOut);
       map.off("click", onMapClick);
       if (pane) pane.removeChild(canvas);
       map.getContainer().style.cursor = "";
@@ -375,7 +471,6 @@ interface InnerMapProps {
   positions: [number, number][];
   mapRef: React.RefObject<L.Map | null>;
   setZoom: (z: number) => void;
-  activeFilter: string;
   onHover: (tower: Tower, x: number, y: number) => void;
   onHoverOff: () => void;
   onTowerClick: (tower: Tower, latlng: L.LatLng) => void;
@@ -386,7 +481,6 @@ const InnerMap: React.FC<InnerMapProps> = ({
   positions,
   mapRef,
   setZoom,
-  activeFilter,
   onHover,
   onHoverOff,
   onTowerClick,
@@ -406,7 +500,6 @@ const InnerMap: React.FC<InnerMapProps> = ({
           towers={towers}
           greenIconUrl="https://dev-citadel.codez.co.in/ranajit_map/images/tower_icon_green.png"
           redIconUrl="https://dev-citadel.codez.co.in/ranajit_map/images/tower_icon_red.png"
-          activeFilter={activeFilter}
           iconWidth={24}
           iconHeight={32}
           onHover={onHover}
@@ -414,26 +507,6 @@ const InnerMap: React.FC<InnerMapProps> = ({
           onClick={onTowerClick}
         />
       )}
-
-      {/* Pulsating ring for towers that are up */}
-      {towers
-        .filter((tower) => tower.attributes.down_time === 0)
-        .map((tower) => (
-          <Marker
-            key={`alarm-${tower.thingId}`}
-            position={[
-              tower.attributes.location.lat,
-              tower.attributes.location.lng,
-            ]}
-            interactive={false}
-            icon={L.divIcon({
-              className: "custom-div-icon",
-              html: `<div class="alarm-circle"></div>`,
-              iconSize: [40, 40],
-              iconAnchor: [12.5, 50],
-            })}
-          />
-        ))}
     </>
   );
 };
@@ -455,20 +528,30 @@ const TowerMap = () => {
 
   const selectedTowerId = useTowerStore((s) => s.selectedTowerId);
   const setSelectedTowerId = useTowerStore((s) => s.setSelectedTowerId);
-  const activeSiteFilter = useTowerStore((s) => s.activeSiteFilter);
   const setIsSidebarOpen = useTowerStore((s) => s.setIsSidebarOpen);
   const { data: selectedTower } = useTower(selectedTowerId ?? undefined);
 
+  const validTowers = useMemo(
+    () =>
+      (towers as Tower[]).filter((t) =>
+        isValidIndianSiteLocation(
+          t.attributes.location?.lat,
+          t.attributes.location?.lng,
+        ),
+      ),
+    [towers],
+  );
+
   const positions = useMemo(
     () =>
-      (towers as Tower[]).map(
+      validTowers.map(
         (t) =>
           [t.attributes.location.lat, t.attributes.location.lng] as [
             number,
             number,
           ],
       ),
-    [towers],
+    [validTowers],
   );
 
   // Keep popup in sync
@@ -482,14 +565,49 @@ const TowerMap = () => {
     setTimeout(() => setSelectedTowerId(null), 300);
   }, [setSelectedTowerId, setIsSidebarOpen]);
 
+  // Tooltip only appears after the cursor rests on a tower for a beat —
+  // with tens of thousands of sites, sweeping the cursor across the map
+  // would otherwise flash a tooltip for every tower it grazes.
+  const showTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingHover = useRef<TooltipState | null>(null);
+  const shownTowerIdRef = useRef<string | null>(null);
+
   const handleHover = useCallback((tower: Tower, x: number, y: number) => {
-    if (hoverTimer.current) clearTimeout(hoverTimer.current);
-    setTooltip({ tower, x, y });
+    if (hoverTimer.current) {
+      clearTimeout(hoverTimer.current);
+      hoverTimer.current = null;
+    }
+    if (shownTowerIdRef.current === tower.thingId) {
+      // Already showing this tower's tooltip — just follow the cursor.
+      setTooltip({ tower, x, y });
+      return;
+    }
+    const pending = pendingHover.current;
+    pendingHover.current = { tower, x, y };
+    if (!pending || pending.tower.thingId !== tower.thingId) {
+      if (showTimer.current) clearTimeout(showTimer.current);
+      showTimer.current = setTimeout(() => {
+        showTimer.current = null;
+        const p = pendingHover.current;
+        if (p) {
+          shownTowerIdRef.current = p.tower.thingId;
+          setTooltip(p);
+        }
+      }, 250);
+    }
   }, []);
 
   const handleHoverOff = useCallback(() => {
+    if (showTimer.current) {
+      clearTimeout(showTimer.current);
+      showTimer.current = null;
+    }
+    pendingHover.current = null;
     if (hoverTimer.current) clearTimeout(hoverTimer.current);
-    hoverTimer.current = setTimeout(() => setTooltip(null), 80);
+    hoverTimer.current = setTimeout(() => {
+      shownTowerIdRef.current = null;
+      setTooltip(null);
+    }, 80);
   }, []);
 
   const handleTowerClick = useCallback(
@@ -497,6 +615,12 @@ const TowerMap = () => {
       setSelectedTowerId(tower.thingId);
       setIsSidebarOpen(true);
       setActivePopup({ tower, latlng });
+      if (showTimer.current) {
+        clearTimeout(showTimer.current);
+        showTimer.current = null;
+      }
+      pendingHover.current = null;
+      shownTowerIdRef.current = null;
       setTooltip(null);
     },
     [setSelectedTowerId, setIsSidebarOpen],
@@ -525,11 +649,10 @@ const TowerMap = () => {
         />
 
         <InnerMap
-          towers={towers as Tower[]}
+          towers={validTowers}
           positions={positions}
           mapRef={mapRef}
           setZoom={setZoom}
-          activeFilter={activeSiteFilter}
           onHover={handleHover}
           onHoverOff={handleHoverOff}
           onTowerClick={handleTowerClick}
@@ -546,8 +669,7 @@ const TowerMap = () => {
             <strong>{activePopup.tower.thingId}</strong>
             <div className="w-[420px] h-[450px] overflow-auto">
               {!selectedTower ||
-              selectedTower.thingId !== activePopup.tower.thingId ||
-              !selectedTower.features?.components ? (
+              selectedTower.thingId !== activePopup.tower.thingId ? (
                 <div className="p-4 text-sm text-gray-500">
                   Loading tower details…
                 </div>
@@ -555,7 +677,13 @@ const TowerMap = () => {
                 <TowerPreview
                   structureType={selectedTower.attributes.structure_type}
                   installationType={selectedTower.attributes.installation_type}
-                  components={selectedTower.features.components.properties}
+                  // The new backend has no per-site component inventory
+                  // (that was Ditto-only data) — with an empty object the
+                  // preview renders the base tower without accessory
+                  // layers instead of blocking on "Loading…" forever.
+                  components={
+                    selectedTower.features?.components?.properties ?? {}
+                  }
                   uptime={selectedTower.attributes.uptime}
                   down_time={selectedTower.attributes.down_time}
                 />

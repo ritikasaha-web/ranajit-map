@@ -1,5 +1,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getTwinById, getTwins, TwinItem } from "../ditto/endpoints";
+import {
+  getSiteAlarms,
+  getTwinById,
+  getTwins,
+  TwinItem,
+} from "../digitalTwin/endpoints";
 
 const TOWER_KEYS = {
   all: ["towers"] as const,
@@ -45,3 +50,10 @@ export const useTower = (id?: string | null) => {
     },
   });
 };
+
+export const useSiteAlarms = (id?: string | null) =>
+  useQuery({
+    queryKey: id ? ["site-alarms", id] : [],
+    queryFn: () => getSiteAlarms(id as string),
+    enabled: !!id,
+  });
