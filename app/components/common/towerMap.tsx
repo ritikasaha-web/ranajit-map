@@ -14,6 +14,12 @@ import "leaflet/dist/leaflet.css";
 import { useTowerStore } from "@/app/store/useTowerStore";
 import { useTower, useTowers } from "@/app/hooks/getTowers";
 import { isValidIndianSiteLocation } from "@/app/utils/indiaBounds";
+import MapStyleSwitcher from "../shared/mapStyleSwitcher";
+import {
+  BASEMAP_STORAGE_KEY,
+  DEFAULT_BASEMAP_ID,
+  getBasemap,
+} from "@/app/constants/basemaps";
 import TowerTooltip from "@/app/components/shared/TowerTooltip";
 import TowerPreview from "../shared/towerPreview";
 import MapLegend from "../shared/mapLegend";
@@ -526,6 +532,23 @@ const TowerMap = () => {
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mapRef = useRef<L.Map | null>(null);
 
+  // Basemap choice, persisted so it survives reloads. This component is
+  // lazy-loaded client-side only, but keep the window guard anyway.
+  const [basemapId, setBasemapId] = useState<string>(() => {
+    if (typeof window === "undefined") return DEFAULT_BASEMAP_ID;
+    return localStorage.getItem(BASEMAP_STORAGE_KEY) ?? DEFAULT_BASEMAP_ID;
+  });
+  const basemap = getBasemap(basemapId);
+
+  const handleBasemapChange = useCallback((id: string) => {
+    setBasemapId(id);
+    try {
+      localStorage.setItem(BASEMAP_STORAGE_KEY, id);
+    } catch {
+      // Private mode / storage full — selection just won't persist.
+    }
+  }, []);
+
   const selectedTowerId = useTowerStore((s) => s.selectedTowerId);
   const setSelectedTowerId = useTowerStore((s) => s.setSelectedTowerId);
   const setIsSidebarOpen = useTowerStore((s) => s.setIsSidebarOpen);
@@ -641,11 +664,14 @@ const TowerMap = () => {
         ]}
         maxBoundsViscosity={1.0}
       >
+        {/* key remounts the layer on style change — the most reliable way
+            to swap tile URLs across react-leaflet versions */}
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-          subdomains="abcd"
+          key={basemap.id}
+          url={basemap.url}
+          subdomains={basemap.subdomains ?? "abc"}
           noWrap={true}
-          attribution="&copy; OSM &copy; CARTO"
+          attribution={basemap.attribution}
         />
 
         <InnerMap
@@ -695,6 +721,7 @@ const TowerMap = () => {
 
       <GlobalTooltip state={tooltip} />
       <MapLegend />
+      <MapStyleSwitcher value={basemapId} onChange={handleBasemapChange} />
     </div>
   );
 };
