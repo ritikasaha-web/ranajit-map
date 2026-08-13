@@ -176,6 +176,12 @@ export async function loadImage(src: string): Promise<ImageBitmap> {
   if (cached) return cached;
 
   const res = await fetch(src);
+  if (!res.ok) {
+    // Without this check a 404 hands the Next.js HTML error page to
+    // createImageBitmap, which throws an opaque InvalidStateError
+    // ("The source image could not be decoded").
+    throw new Error(`Image fetch failed (${res.status}): ${src}`);
+  }
   const blob = await res.blob();
   const bitmap = await createImageBitmap(blob);
   imageBitmapCache.set(src, bitmap);
@@ -195,10 +201,16 @@ export async function generateTowerImage(
   canvas.height = 420;
   const ctx = canvas.getContext("2d")!;
 
-  const images = await Promise.all(layers.map((l) => loadImage(l.src)));
-  images.forEach((img) =>
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height),
-  );
+  // A missing/corrupt layer image just gets skipped — one bad asset
+  // shouldn't take down the whole tower render.
+  const results = await Promise.allSettled(layers.map((l) => loadImage(l.src)));
+  for (const [i, r] of results.entries()) {
+    if (r.status === "fulfilled") {
+      ctx.drawImage(r.value, 0, 0, canvas.width, canvas.height);
+    } else {
+      console.warn(`Skipping tower layer "${layers[i]?.id}":`, r.reason);
+    }
+  }
 
   const result = canvas.toDataURL("image/webp");
   towerCache.set(key, result);

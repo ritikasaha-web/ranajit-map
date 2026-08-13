@@ -72,9 +72,18 @@ const TowerPreview = ({
     layers: ComponentLayer[];
     prefetchReady: Promise<void>;
   }>(() => {
+    // Data from the new backend can have null/unknown structure or
+    // installation types — fall back to sane defaults instead of
+    // building "/undefined.webp" URLs that fail image decoding.
+    const safeStructureType = componentSetMap[structureType]
+      ? structureType
+      : "monopole";
+    const safeBaseType =
+      baseTypes[(installationType ?? "").toUpperCase()] ?? "GBT";
+
     const towerComponents =
-      componentSetMap[structureType] ?? monopoleComponentSet;
-    const anchors = anchorMap[structureType] ?? anchorMap.monopole;
+      componentSetMap[safeStructureType] ?? monopoleComponentSet;
+    const anchors = anchorMap[safeStructureType] ?? anchorMap.monopole;
 
     // const base: ComponentLayer[] = [
     //   {
@@ -90,12 +99,12 @@ const TowerPreview = ({
     // ];
     const base: ComponentLayer[] = [
       {
-        src: `/${baseTypes[installationType]}.webp`,
+        src: `/${safeBaseType}.webp`,
         id: "__base__",
         anchor: { x: 50, y: 50 },
       },
       {
-        src: `/${structureType}/${structureType}.webp`,
+        src: `/${safeStructureType}/${safeStructureType}.webp`,
         id: "__structure__",
         anchor: { x: 50, y: 50 },
       },
@@ -110,8 +119,8 @@ const TowerPreview = ({
 
       const src =
         key === "cable" && typeof value !== "number"
-          ? `/${structureType}/cable_${value}.webp`
-          : `/${structureType}/${key}.webp`;
+          ? `/${safeStructureType}/cable_${value}.webp`
+          : `/${safeStructureType}/${key}.webp`;
       // const src =
       //   key === "cable" && typeof value !== "number"
       //     ? `https://dev-citadel.codez.co.in/ranajit_map/${structureType}/cable_${value}.webp`
